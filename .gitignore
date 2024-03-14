@@ -40,3 +40,9 @@ yarn-error.log*
 **/*.log
 package-lock.json
 **/*.bun
+
+# Project build and state files
+dist
+public/tailwind.css
+state.json
+.env.local
