@@ -54,6 +54,19 @@ E.g. if function a modifies player a, and function b modifies player b, and they
 This can happen because the state modification, serialization, and file write is not an atomic operation.
 In practice this should not be too much of a problem as there should be limited writes to the state file, and the state file is only used for persistence and not for real-time state updates.
 
+## Aknowledgements
+
+This code competition game is inspired by the [Extreme Startup](https://github.com/rchatley/extreme_startup) workshop I first played over ten years ago.
+Instead of adding questions to the existing game I wanted to take the opportunity to learn some new technologies and build a new game from scratch.
+The mechanics are mostly the same as the original workshop, but will differ in some aspects.
+Questions are also made from scratch to provide new challenges for participants who played the original game.
+
+The new game does keep important aspects of the original game.
+Questions are encoded as plain old strings and communicated via simple HTTP requests to allow various programming languages to more easily participate.
+The questions are not too complex and should be solvable in a few lines of code.
+Each player should have a sliding window of progressively harder questions to solve so that the game is accessible to beginners and challenging to experts.
+
+
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

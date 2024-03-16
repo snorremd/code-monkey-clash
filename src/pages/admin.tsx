@@ -89,8 +89,9 @@ interface AdminProps {
 }
 
 const Admin = ({ state }: AdminProps) => {
+  console.log("State", state);
   return (
-    <div id="content" class="flex flex-col">
+    <div id="content" class="flex flex-col min-w-full gap-16">
       <div class="flex flex-row justify-between">
         <h1 class="text-4xl font-bold">Admin</h1>
         <a href="/admin/logout" class="btn btn-secondary">
@@ -98,6 +99,54 @@ const Admin = ({ state }: AdminProps) => {
         </a>
       </div>
 
+      <div class="flex flex-col min-w-full gap-8 items-center">
+        {state.status === "test" ? (
+          <h2 class="text-warning m-0">
+            Test game started at {state.startedAt}
+          </h2>
+        ) : null}
+        {state.status === "game" ? (
+          <h2 class="text-success m-0">Game started at {state.startedAt}</h2>
+        ) : null}
+        {state.status === "stopped" ? (
+          <h2 class="text-error m-0">Game stopped</h2>
+        ) : null}
+        <div class="flex flex-row gap-4">
+          {state.status === "stopped" ? (
+            <>
+              <form>
+                <button
+                  class="btn btn-warning"
+                  hx-post="/admin/start-demo"
+                  hx-trigger="click"
+                >
+                  Start Demo
+                </button>
+              </form>
+              <form>
+                <button
+                  class="btn btn-success"
+                  hx-post="/admin/start-game"
+                  hx-trigger="click"
+                >
+                  Start Game
+                </button>
+              </form>
+            </>
+          ) : null}
+          {state.status !== "stopped" ? (
+            <form>
+              <button
+                class="btn btn-error"
+                hx-get="/admin/stop"
+                hx-trigger="click"
+              >
+                Stop
+              </button>
+            </form>
+          ) : null}
+        </div>
+      </div>
       <h2>Players</h2>
       <div class="overflow-x-auto w-full h-full">
         <table class="table">

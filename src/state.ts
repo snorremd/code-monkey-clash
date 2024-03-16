@@ -21,6 +21,7 @@ export interface Player {
 
 export interface State {
   status: 'test' | 'game' | 'stopped';
+  startedAt: string; // ISO date time
   players: Player[]
 }
 
@@ -28,8 +29,9 @@ export interface State {
 async function loadState() {
   return await Bun.file(stateLocation).exists() ? await Bun.file(stateLocation).json() : {
     players: [],
-    state: 'stopped'
-  };
+    startedAt: new Date().toISOString(),
+    status: 'stopped',
+  } satisfies State;
 }
 
 async function saveState(state: State) {
