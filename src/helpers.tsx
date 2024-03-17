@@ -1,5 +1,5 @@
-import { ValidationError } from "elysia";
+import type { ValidationError } from "elysia";
 
 export function mapValidationError(error: ValidationError) {
-  return Object.fromEntries(error.all.map(e => [e.path, e.message]))
+	return Object.fromEntries(error.all.map((e) => [e.path, e.message]));
 }
