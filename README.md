@@ -10,13 +10,31 @@ bun install
 bun run dev
 ```
 
-TODO: Support docker
+### Docker
+
+You can also run the server with Docker:
+
+```sh
+git clone git@github.com:snorremd/code-monkey-clash.git
+docker build -t code-monkey-clash .
+docker run -p 3000:3000 code-monkey-clash
+```
 
 ## Development
 
 ```sh
 bun install
 bun run dev
+```
+
+### Running tests
+
+Tests are written using [Bun's own test framework](https://bun.sh/docs/test/writing).
+It emulates the Jest API, so it should be familiar to most frontend developers.
+Run tests with:
+
+```sh
+bun run test
 ```
 
 ### Format, lint, and code check
