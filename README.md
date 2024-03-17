@@ -19,6 +19,19 @@ bun install
 bun run dev
 ```
 
+### Format, lint, and code check
+
+This project uses [Biome](https://biomejs.dev) for formatting, linting, and code checking.
+Before contributing make sure to run Biome formatting and code checks:
+
+```sh
+bun run format # Formats the code according to project settings
+bun run check # Runs autofixable checks
+bun run lint # Runs non-autofixable checks, fix them manually
+```
+
+Biome has [multiple editor extensions](https://biomejs.dev/guides/integrate-in-editor/) to help you format and lint your code as you write it.
+
 ## Technical Decisions
 
 This project is mostly done for fun and to learn new things, so I've decided to use a few technologies that I'm not very familiar with.

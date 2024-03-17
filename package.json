@@ -8,7 +8,11 @@
     "dev": "concurrently \"npm:dev:server\" \"npm:dev:tailwind\"",
     "build:tailwind": "tailwindcss -i ./src/tailwind.css -o ./public/tailwind.css",
     "build:server": "bun build --target=bun ./src/index.tsx --outfile=dist/index.js",
-    "build": "bun run --target=bun build:server && npm run build:tailwind"
+    "build": "bun run --target=bun build:server && npm run build:tailwind",
+    "format:check": "biome format ./src",
+    "format": "biome format ./src --write",
+    "lint": "biome lint ./src",
+    "check": "biome check --apply ./src"
   },
   "dependencies": {
     "@elysiajs/cookie": "^0.8.0",
@@ -20,6 +24,7 @@
     "htmx.org": "^1.9.10"
   },
   "devDependencies": {
+    "@biomejs/biome": "^1.6.1",
     "@tailwindcss/typography": "^0.5.10",
     "bun-types": "latest",
     "concurrently": "^8.2.2",
