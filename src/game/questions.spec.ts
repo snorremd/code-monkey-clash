@@ -12,12 +12,15 @@ import {
   mostCommonLetter,
   multiplyDivideAndAdd,
   multiplyMultipleNumbers,
+  binaryToDecimal,
   numeronym,
   palindromes,
   runLengthEncoding,
   subtractTwo,
   uppercase,
   vowels,
+  morseCodeDecoder,
+  happyNumber,
 } from "./questions";
 
 describe("uppercase", () => {
@@ -227,9 +230,7 @@ describe("addTwo", () => {
   test("question", () => {
     const number = 2;
     const question = addTwo.question([1, 2]);
-    expect(question).toBe(
-      "Calculate the sum (prefix polish notation) of: + 1 2"
-    );
+    expect(question).toBe("Calculate the sum of: + 1 2");
   });
 
   test("correctAnswer", () => {
@@ -477,6 +478,109 @@ describe("runLengthEncoding", () => {
 
   test("incorrectAnswer", () => {
     const result = runLengthEncoding.correctAnswer("a1b2", "aaabcc");
+    expect(result).toBeFalse();
+  });
+});
+
+describe("binaryToDecimal", () => {
+  test("randomInput", () => {
+    const number = binaryToDecimal.randomInput();
+    expect(number).toBeString();
+  });
+
+  test("question", () => {
+    const number = "101";
+    const question = binaryToDecimal.question(number);
+    expect(question).toBe(
+      "What is the decimal value of the binary number: 101"
+    );
+  });
+
+  test("correctAnswer", () => {
+    const result = binaryToDecimal.correctAnswer("5", "101");
+    expect(result).toBeTrue();
+  });
+
+  test("correctAnswer zero", () => {
+    const result = binaryToDecimal.correctAnswer("0", "0");
+    expect(result).toBeTrue();
+  });
+
+  test("correctAnswer 10111001101101", () => {
+    const result = binaryToDecimal.correctAnswer("11885", "10111001101101");
+    expect(result).toBeTrue();
+  });
+
+  test("incorrectAnswer", () => {
+    const result = binaryToDecimal.correctAnswer("6", "101");
+    expect(result).toBeFalse();
+  });
+});
+
+describe("morseCodeDecoder", () => {
+  test("randomInput", () => {
+    const sentence = morseCodeDecoder.randomInput();
+    expect(sentence).toBeString();
+  });
+
+  test("question", () => {
+    const sentence = ".... . .-.. .-.. ---";
+    const question = morseCodeDecoder.question(sentence);
+    expect(question).toBe(
+      "What is the decoded message from morse code (3 spaces = space): .... . .-.. .-.. ---"
+    );
+  });
+
+  test("correctAnswer", () => {
+    const result = morseCodeDecoder.correctAnswer(
+      "hello",
+      ".... . .-.. .-.. ---"
+    );
+    expect(result).toBeTrue();
+  });
+
+  test("incorrectAnswer", () => {
+    const result = morseCodeDecoder.correctAnswer(
+      "world",
+      ".... . .-.. .-.. ---"
+    );
+    expect(result).toBeFalse();
+  });
+});
+
+describe("happyNumber", () => {
+  test("randomInput", () => {
+    const { number, randomNumbers } = happyNumber.randomInput();
+    expect(number).toBeNumber();
+    expect(randomNumbers).toBeArray();
+    expect(randomNumbers.some((n) => n === number)).toBeTrue();
+  });
+
+  test("question", () => {
+    const number = 19;
+    const randomNumbers = [1, 2, 3, number, 4, 5];
+    const question = happyNumber.question({
+      number,
+      randomNumbers,
+    });
+    expect(question).toBe(
+      "Which of these numbers is a happy number: 1, 2, 3, 19, 4, 5"
+    );
+  });
+
+  test("correctAnswer", () => {
+    const result = happyNumber.correctAnswer("19", {
+      number: 19,
+      randomNumbers: [1, 2, 3, 19, 4, 5],
+    });
+    expect(result).toBeTrue();
+  });
+
+  test("incorrectAnswer", () => {
+    const result = happyNumber.correctAnswer("23", {
+      number: 19,
+      randomNumbers: [1, 2, 3, 19, 4, 5],
+    });
     expect(result).toBeFalse();
   });
 });

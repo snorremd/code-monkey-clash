@@ -1,15 +1,22 @@
 import {
+  decodeMorse,
   encodeCaesarCipher,
+  encodeMorse,
   evaluatePolishNotation,
   randomNumbers,
+  generateHappyNumbers,
+  generateUnhappyNumbers,
 } from "./helpers";
 
-interface Question<T> {
+// Make an inferred type for the question object
+// It can be any thing
+
+export interface Question<T> {
   randomInput: () => T;
   question: (input: T) => string;
   correctAnswer: (answer: string, input: T) => boolean;
   points: number;
-  hintURL?: string;
+  hint?: string;
 }
 
 interface RandomWordQuestion extends Question<string> {}
@@ -23,6 +30,7 @@ export const uppercase: RandomWordQuestion = {
   correctAnswer: (answer: string, randomWord: string) =>
     randomWord.toUpperCase() === answer,
   points: 2,
+  hint: "https://en.wikipedia.org/wiki/Letter_case",
 };
 
 export const lowercase: RandomWordQuestion = {
@@ -34,6 +42,7 @@ export const lowercase: RandomWordQuestion = {
   correctAnswer: (answer: string, randomWord: string) =>
     randomWord.toLowerCase() === answer,
   points: 2,
+  hint: "https://en.wikipedia.org/wiki/Letter_case",
 };
 
 export const mostCommonLetter: RandomWordQuestion = {
@@ -73,6 +82,7 @@ export const vowels: RandomWordQuestion = {
     return vowels?.length.toString() === answer;
   },
   points: 4,
+  hint: "a e i o u y",
 };
 
 export const consonants: RandomWordQuestion = {
@@ -87,6 +97,7 @@ export const consonants: RandomWordQuestion = {
     return consonants?.length.toString() === answer;
   },
   points: 4,
+  hint: "b c d f g h j k l m n p q r s t v w x z",
 };
 
 export const numeronym: RandomWordQuestion = {
@@ -108,7 +119,21 @@ export const numeronym: RandomWordQuestion = {
     return abbreviation === answer;
   },
   points: 4,
-  hintURL: "https://en.wikipedia.org/wiki/Numeronym#Numerical_contractions",
+  hint: "https://en.wikipedia.org/wiki/Numeronym#Numerical_contractions",
+};
+
+export const binaryToDecimal: RandomWordQuestion = {
+  randomInput: () => {
+    const binary = Math.floor(Math.random() * 256).toString(2);
+    return binary;
+  },
+  question: (binary) =>
+    `What is the decimal value of the binary number: ${binary}`,
+  correctAnswer: (answer, binary) => {
+    return Number.parseInt(binary, 2).toString() === answer;
+  },
+  points: 2,
+  hint: "https://en.wikipedia.org/wiki/Binary_number",
 };
 
 interface WordListQuestion extends Question<string[]> {}
@@ -144,7 +169,7 @@ export const palindromes: WordListQuestion = {
     );
   },
   points: 5,
-  hintURL: "https://en.wikipedia.org/wiki/Palindrome",
+  hint: "https://en.wikipedia.org/wiki/Palindrome",
 };
 
 export const heterograms: WordListQuestion = {
@@ -199,7 +224,7 @@ export const heterograms: WordListQuestion = {
     );
   },
   points: 5,
-  hintURL: "https://en.wikipedia.org/wiki/Heterogram_(literature)",
+  hint: "https://en.wikipedia.org/wiki/Heterogram_(literature)",
 };
 
 interface MissingNumberQuestion extends Question<[number[], number]> {}
@@ -239,7 +264,7 @@ export const addTwo: TwoNumberQuestion = {
     return answer === (a + b).toString();
   },
   points: 5,
-  hintURL: "https://en.wikipedia.org/wiki/Polish_notation",
+  hint: "https://en.wikipedia.org/wiki/Polish_notation",
 };
 
 export const subtractTwo: TwoNumberQuestion = {
@@ -254,7 +279,7 @@ export const subtractTwo: TwoNumberQuestion = {
     return answer === (a - b).toString();
   },
   points: 5,
-  hintURL: "https://en.wikipedia.org/wiki/Polish_notation",
+  hint: "https://en.wikipedia.org/wiki/Polish_notation",
 };
 
 export const runLengthEncoding: RandomWordQuestion = {
@@ -278,11 +303,35 @@ export const runLengthEncoding: RandomWordQuestion = {
     const encoded = randomWord.replace(/(.)\1*/g, (match, char) => {
       return `${char}${match.length}`;
     });
-    console.log("encoded", encoded, "answer", answer);
     return encoded === answer;
   },
   points: 10,
-  hintURL: "https://en.wikipedia.org/wiki/Run-length_encoding",
+  hint: "https://en.wikipedia.org/wiki/Run-length_encoding",
+};
+
+export const morseCodeDecoder: RandomWordQuestion = {
+  randomInput: () =>
+    encodeMorse(
+      [
+        "debug the code",
+        "commit the changes",
+        "push to repository",
+        "pull request review",
+        "merge conflict resolution",
+        "deploy to production",
+        "roll back deployment",
+        "continuous integration pipeline",
+        "write unit tests",
+        "refactor the legacy",
+      ].sort(() => Math.random() - 0.5)[0]
+    ),
+  question: (randomMorseCode) =>
+    `What is the decoded message from morse code (3 spaces = space): ${randomMorseCode}`,
+  correctAnswer: (answer, randomMorseCode) => {
+    return answer === decodeMorse(randomMorseCode);
+  },
+  points: 10,
+  hint: "https://en.wikipedia.org/wiki/Morse_code",
 };
 
 interface MultiplyMultipleNumbersQuestion extends Question<number[]> {}
@@ -298,7 +347,7 @@ export const multiplyMultipleNumbers: MultiplyMultipleNumbersQuestion = {
     return answer === numbers.reduce((acc, num) => acc * num, 1).toString();
   },
   points: 10,
-  hintURL: "https://en.wikipedia.org/wiki/Polish_notation",
+  hint: "https://en.wikipedia.org/wiki/Polish_notation",
 };
 
 export const maximumProductOfTwoNumbers: MultiplyMultipleNumbersQuestion = {
@@ -313,7 +362,7 @@ export const maximumProductOfTwoNumbers: MultiplyMultipleNumbersQuestion = {
     return answer === (sorted[0] * sorted[1]).toString();
   },
   points: 10,
-  hintURL: "https://en.wikipedia.org/wiki/Product_(mathematics)",
+  hint: "https://en.wikipedia.org/wiki/Product_(mathematics)",
 };
 
 interface MathQuestion {
@@ -350,7 +399,46 @@ export const multiplyDivideAndAdd: MultipleExpressionsQuestion = {
     );
   },
   points: 20,
-  hintURL: "https://en.wikipedia.org/wiki/Polish_notation",
+  hint: "https://en.wikipedia.org/wiki/Polish_notation",
+};
+
+interface HappyNumber {
+  number: number;
+  randomNumbers: number[];
+}
+
+interface HappyNumberQuestion extends Question<HappyNumber> {}
+
+const happyNumbers = generateHappyNumbers(50);
+const unhappyNumbers = generateUnhappyNumbers(350);
+
+console.log(happyNumbers);
+
+export const happyNumber: HappyNumberQuestion = {
+  randomInput: () => {
+    const happyNumber =
+      happyNumbers[Math.floor(Math.random() * happyNumbers.length)];
+    const randomNumbers = unhappyNumbers
+      .sort(() => Math.random() - 0.5)
+      .slice(0, 9);
+    // Insert the happy number at a random position in randomNumbers
+    randomNumbers.splice(
+      Math.floor(Math.random() * randomNumbers.length),
+      0,
+      happyNumber
+    );
+    return {
+      number: happyNumber,
+      randomNumbers,
+    };
+  },
+  question: ({ number: happyNumber, randomNumbers }) =>
+    `Which of these numbers is a happy number: ${randomNumbers.join(", ")}`,
+  correctAnswer: (answer: string, { number: happyNumber }) => {
+    return answer === happyNumber.toString();
+  },
+  points: 20,
+  hint: "https://en.wikipedia.org/wiki/Happy_number",
 };
 
 interface CaesarCipher {
@@ -387,13 +475,14 @@ export const caesarCipher: CaesarCipherQuestion = {
     return sentence === answer;
   },
   points: 20,
-  hintURL: "https://en.wikipedia.org/wiki/Caesar_cipher",
+  hint: "https://en.wikipedia.org/wiki/Caesar_cipher",
 };
 
 export const testQuestions = [uppercase, lowercase, vowels];
 
 export const gameQuestions = [
   consonants,
+  binaryToDecimal,
   mostCommonLetter,
   palindromes,
   heterograms,
@@ -404,6 +493,8 @@ export const gameQuestions = [
   multiplyMultipleNumbers,
   maximumProductOfTwoNumbers,
   runLengthEncoding,
+  morseCodeDecoder,
   multiplyDivideAndAdd,
   caesarCipher,
+  happyNumber,
 ];
