@@ -412,8 +412,6 @@ interface HappyNumberQuestion extends Question<HappyNumber> {}
 const happyNumbers = generateHappyNumbers(50);
 const unhappyNumbers = generateUnhappyNumbers(350);
 
-console.log(happyNumbers);
-
 export const happyNumber: HappyNumberQuestion = {
   randomInput: () => {
     const happyNumber =
