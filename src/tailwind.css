@@ -1,3 +1,37 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Approach to CSS patterns kindly borrowed from https://codepen.io/thebabydino/pen/NWxBzRv */
+.epic {
+  background: linear-gradient(
+    to left top,
+    oklch(var(--a) / 0.01),
+    oklch(var(--s) / 0.01)
+  );
+
+  &::before,
+  &::after {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 0;
+    content: "";
+  }
+
+  &::before {
+    background: linear-gradient(30deg, #555, #000),
+      repeating-linear-gradient(30deg, #000, #999, #000 0.5%),
+      repeating-linear-gradient(-80deg, #000, #999, #000 0.5%);
+    background-blend-mode: screen, difference;
+    filter: contrast(20);
+    mix-blend-mode: multiply;
+  }
+
+  &::after {
+    background: linear-gradient(90deg, oklch(var(--b1)), oklch(var(--b2)));
+    mix-blend-mode: screen;
+  }
+}

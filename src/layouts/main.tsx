@@ -6,19 +6,15 @@ interface LayoutProps {
 
 export const HTMLLayout = ({ page, header, children }: LayoutProps) => {
   return (
-    <html lang="en" class="h-full bg-stone-900">
+    <html lang="en" class="h-full">
       <head>
         <title>{page} - Extreme Startup</title>
         <link rel="stylesheet" href="/public/tailwind.css" />
         <script src="/public/htmx.min.js" />
         <script src="/public/response-targets.js" />
       </head>
-      <body
-        class="prose max-w-none bg-slate-800 relative hero min-h-full min-w-screen"
-        style="background-image: url(/public/background.jpg);"
-      >
-        <div class="hero-overlay bg-opacity-[98%]" />
-        <header class="navbar absolute inset-x-0 top-0 z-50 bg-base-100">
+      <body class="bg-base-100">
+        <header class="navbar absolute inset-x-0 top-0 z-50 bg-base-300">
           <div class="flex-1">
             <a class="btn btn-ghost text-xl text-primary" href="/">
               Code Monkey Clash
@@ -26,33 +22,20 @@ export const HTMLLayout = ({ page, header, children }: LayoutProps) => {
           </div>
           {header}
         </header>
-        {children}
+        <main
+          id="main"
+          class="z-100 min-w-full min-h-screen flex flex-col grow py-16 px-8"
+        >
+          {children}
+        </main>
+        <footer class="fixed bg-base-100 bg-opacity-20 inset-x-0 bottom-0 z-50 text-neutral-content text-end p-4">
+          A game by{" "}
+          <a class="link" href="https://snorre.io">
+            Snorre Magnus Davøen
+          </a>
+        </footer>
       </body>
     </html>
-  );
-};
-
-export const FullScreenLayout = ({ page, header, children }: LayoutProps) => {
-  return (
-    <HTMLLayout page={page} header={header}>
-      <div class="w-full h-full px-8 pt-16">{children}</div>
-      {/* Display credit in the bottom right corner */}
-      <div class="absolute bottom-0 right-0 p-4 text-xs text-neutral-content">
-        <p>
-          Photo by{" "}
-          <a href="https://unsplash.com/@alesnesetril" class="underline">
-            Ales Nesetril
-          </a>{" "}
-          on{" "}
-          <a
-            href="https://unsplash.com/photos/gray-and-black-laptop-computer-on-surface-Im7lZjxeLhg"
-            class="underline"
-          >
-            Unsplash
-          </a>
-        </p>
-      </div>
-    </HTMLLayout>
   );
 };
 

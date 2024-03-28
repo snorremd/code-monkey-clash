@@ -3,12 +3,13 @@ import { Elysia } from "elysia";
 const stateLocation = "./state.json";
 
 export interface PlayerLog {
-  date: Date;
+  date: string;
   score: number;
   points: number;
   question: string;
   answer?: string;
-  response?: number | "timeout" | "error";
+  statusCode?: number;
+  error?: string;
 }
 
 export interface Player {
@@ -88,16 +89,34 @@ export const resetGame = (state: State) => {
   saveState(state);
 };
 
-export const changeScore = (
-  state: State,
-  player: Player,
-  log: PlayerLog,
-  points: number
-) => {
+interface ChangeScoreProps {
+  state: State;
+  player: Player;
+  log: PlayerLog;
+  points: number;
+  statusCode?: number;
+  error?: string;
+  answer?: string;
+}
+
+export const changeScore = ({
+  state,
+  player,
+  log,
+  points,
+  statusCode,
+  error,
+  answer,
+}: ChangeScoreProps) => {
   player.score += points;
   log.score = player.score;
   log.points = points;
+  log.statusCode = statusCode;
+  log.error = error;
+  log.answer = answer;
   saveState(state);
 };
 
-export const plugin = new Elysia().state("state", (await loadState()) as State);
+const state = await loadState();
+
+export const plugin = new Elysia().state("state", state as State);

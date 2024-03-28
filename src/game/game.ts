@@ -31,13 +31,6 @@ const adjustRate = (player: Player) => {
   }
 };
 
-const emptyResponse = (response: Response) => {
-  if (response.status !== 200 || !response.ok || !response.body) {
-    return true;
-  }
-  return false;
-};
-
 const rateLimit = (player: Player) => {
   const lastLog = player.log[0];
   const drift = new Date().getTime() - lastLog.date.getTime();
@@ -64,13 +57,12 @@ function roundToQuestion({ round, mode }: State, player: Player): QuestionType {
 }
 
 export async function askPlayerQuestion(state: State, player: Player) {
-  console.log("Ask question");
   // Drift is elapsed time - expected time. Subtract drift from next question interval
   let drift = 0;
   const now = new Date();
   if (player.log.length > 0) {
     const previous = player.log[0].date;
-    const elapsed = now.getTime() - previous.getTime();
+    const elapsed = now.getTime() - new Date(previous).getTime();
     drift = elapsed - player.question_interval * 1000;
   }
   // Set new question interval
@@ -92,10 +84,8 @@ export async function askPlayerQuestion(state: State, player: Player) {
   const input = task.randomInput();
   const question = task.question(input);
 
-  console.info("Player", player.nick, "question", question, "input", input);
-
   const nextLog = {
-    date: now,
+    date: now.toISOString(),
     question,
     score: 0,
     points: 0,
@@ -105,18 +95,46 @@ export async function askPlayerQuestion(state: State, player: Player) {
 
   try {
     const response = await fetch(`${player.url}?q=${question}`);
-    if (emptyResponse(response)) {
-      changeScore(state, player, nextLog, -10);
-    } else {
+    if (response.status !== 200) {
+      changeScore({
+        state,
+        player,
+        log: nextLog,
+        points: -5,
+        statusCode: response.status,
+      });
+    } else if (response.ok) {
       const answer = await response.text();
       if (task.correctAnswer(answer, input)) {
-        changeScore(state, player, nextLog, task.points);
+        changeScore({
+          state,
+          player,
+          log: nextLog,
+          points: 10,
+          answer,
+        });
       } else {
-        changeScore(state, player, nextLog, -5);
+        changeScore({
+          state,
+          player,
+          log: nextLog,
+          points: -5,
+          answer,
+        });
       }
     }
   } catch (error) {
     console.error("Player", player.nick, "error", error);
-    changeScore(state, player, nextLog, -5);
+    let message = "";
+    if (error instanceof Error) {
+      message = error.message;
+    }
+    changeScore({
+      state,
+      player,
+      log: nextLog,
+      points: -5,
+      error: message,
+    });
   }
 }

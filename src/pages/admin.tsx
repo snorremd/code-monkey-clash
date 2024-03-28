@@ -2,12 +2,7 @@ import { cookie } from "@elysiajs/cookie";
 import { Elysia, type ValidationError, t } from "elysia";
 import { htmx } from "elysia-htmx";
 import { diffNow, formatDuration, mapValidationError } from "../helpers";
-import {
-  FullScreenLayout,
-  HTMLLayout,
-  HXLayout,
-  HeroLayout,
-} from "../layouts/main";
+import { HTMLLayout, HXLayout } from "../layouts/main";
 import { gameQuestions } from "../game/questions";
 import {
   type State,
@@ -16,6 +11,7 @@ import {
   startGame,
 } from "../state";
 import { askPlayerQuestion } from "../game/game";
+import { basePluginSetup } from "../plugins";
 
 interface FormProps {
   secret?: string;
@@ -24,33 +20,35 @@ interface FormProps {
 
 const AdminLoginForm = ({ fieldErrors, secret }: FormProps) => {
   return (
-    <form
-      class="w-full max-w-md flex flex-col gap-4"
-      hx-post="/admin/login"
-      hx-target="this"
-      hx-swap="outerHTML"
-      hx-boost
-    >
-      <label class="form-control w-full max-w-xs">
-        <div class="label">
-          <span class="label-text">What is the admin secret?</span>
-        </div>
-        <input
-          type="password"
-          name="secret"
-          class="input input-bordered w-full max-w-xs"
-          value={secret}
-        />
-        {fieldErrors["/secret"] ? (
-          <div class="label-text-alt mt-2 text-error">
-            {fieldErrors["/secret"]}
+    <div class="epic flex flex-col justify-center grow items-center">
+      <form
+        class="rounded-2xl z-10 bg-base-100 p-8 bg-opacity-80 backdrop-blur-sm w-full max-w-md flex flex-col items-stretch gap-4"
+        hx-post="/admin/login"
+        hx-target="this"
+        hx-swap="outerHTML"
+        hx-boost
+      >
+        <label class="form-control w-full">
+          <div class="label">
+            <span class="label-text">What is the admin secret?</span>
           </div>
-        ) : null}
-      </label>
-      <button type="submit" class="btn btn-primary">
-        Login
-      </button>
-    </form>
+          <input
+            type="password"
+            name="secret"
+            class="input input-bordered w-full"
+            value={secret}
+          />
+          {fieldErrors["/secret"] ? (
+            <div class="label-text-alt mt-2 text-error">
+              {fieldErrors["/secret"]}
+            </div>
+          ) : null}
+        </label>
+        <button type="submit" class="btn btn-primary">
+          Login
+        </button>
+      </form>
+    </div>
   );
 };
 
@@ -77,7 +75,7 @@ const Stats = ({ state }: RoundProps) => {
       class="stats stats-horizontal text-2xl max-w-full"
       hx-get="/admin/time"
       hx-swap="outerHTML"
-      hx-trigger="every 10s"
+      hx-trigger="every 5s"
       hx-target="this"
     >
       <div class="stat place-items-center">
@@ -128,6 +126,13 @@ const PlayOrStop = ({ state }: RoundProps) => {
           >
             Reset Game
           </button>
+          <button
+            type="submit"
+            formaction="/admin/reset-state"
+            class="btn btn-outline btn-error"
+          >
+            Reset Server
+          </button>
         </>
       ) : (
         <>
@@ -155,7 +160,7 @@ const Round = ({ state }: RoundProps) => {
   const { round, status, mode, players } = state;
   const total = mode === "demo" ? 1 : gameQuestions.length / 2;
   return (
-    <div class="flex flex-col gap-4 justify-items-center">
+    <div class="rounded-lg flex flex-col gap-4 justify-items-center">
       <div class="flex flex-row justify-between items-center">
         <div class="flex flex-row">
           <PlayOrStop state={state} />
@@ -201,13 +206,14 @@ const Round = ({ state }: RoundProps) => {
 const Player = (player: State["players"][number]) => {
   const rowId = `player-${player.uuid}`;
   return (
-    <tr class="" id={rowId}>
+    <tr class="odd:bg-base-300" id={rowId}>
       <td>
         <a
           class="link link-hover"
           href={`/players/${player.uuid}`}
           hx-boost="true"
           hx-target="#content"
+          hx-swap="outerHTML"
         >
           {player.nick}
         </a>
@@ -245,39 +251,43 @@ interface AdminProps {
 
 const Admin = ({ state }: AdminProps) => {
   return (
-    <div id="content" class="flex flex-col min-w-full max-w-full gap-16">
+    <div
+      id="content"
+      class="epic pt-8 flex flex-col min-w-full max-w-full gap-8"
+    >
       {/* Display round */}
-      <Round state={state} />
-      <Stats state={state} />
-      <h2 class="hidden">Players</h2>
-      <div class="overflow-x-auto max-w-full h-full">
-        <table class="table text-">
-          <thead>
-            <tr>
-              <th>Nick</th>
-              <th>URL</th>
-              <th>Score</th>
-              <th>Status</th>
-              <th />
-            </tr>
-          </thead>
-          <tbody>
-            {state.players
-              .toSorted((a, b) => a.nick.localeCompare(b.nick))
-              .map((player) => (
-                <Player {...player} />
-              ))}
-          </tbody>
-        </table>
+      <div class="flex flex-col gap-8 z-10 bg-base-100 bg-opacity-90 backdrop-blur-sm p-8 rounded-2xl">
+        <Round state={state} />
+        <Stats state={state} />
+      </div>
+      <div class="z-10 bg-base-100 bg-opacity-90 backdrop-blur-sm p-8 rounded-2xl">
+        <h2 class="hidden">Players</h2>
+        <div class="overflow-x-auto max-w-full h-full">
+          <table class="table text-">
+            <thead>
+              <tr>
+                <th>Nick</th>
+                <th>URL</th>
+                <th>Score</th>
+                <th>Status</th>
+                <th />
+              </tr>
+            </thead>
+            <tbody>
+              {state.players
+                .toSorted((a, b) => a.nick.localeCompare(b.nick))
+                .map((player) => (
+                  <Player {...player} />
+                ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );
 };
 
-export const plugin = new Elysia()
-  .use(htmx())
-  .use(cookie())
-  .use(statePlugin)
+export const plugin = basePluginSetup()
   .get("/admin", ({ hx, cookie, store: { state } }) => {
     const header = (
       <div class="">
@@ -288,14 +298,14 @@ export const plugin = new Elysia()
     );
 
     if (cookie.user === "admin") {
-      const Layout = hx.isHTMX ? HXLayout : FullScreenLayout;
+      const Layout = hx.isHTMX ? HXLayout : HTMLLayout;
       return (
         <Layout page="Admin" header={header}>
           <Admin state={state} />
         </Layout>
       );
     }
-    const Layout = hx.isHTMX ? HXLayout : HeroLayout;
+    const Layout = hx.isHTMX ? HXLayout : HTMLLayout;
     return (
       <Layout page="Sign Up" header={header}>
         <AdminLoginForm fieldErrors={{}} />
@@ -375,7 +385,6 @@ export const plugin = new Elysia()
   .post("/admin/start-demo", ({ hx, set, store: { state } }) => {
     startGame(state, "demo");
     for (const player of state.players) {
-      console.log("Start demo for player", player);
       askPlayerQuestion(state, player);
     }
 
