@@ -1,5 +1,5 @@
-import { changeScore, type Player, type State } from "../state";
-import { testQuestions, gameQuestions, type Question } from "./questions";
+import { type Player, type State, changeScore } from "../state";
+import { type Question, gameQuestions, testQuestions } from "./questions";
 
 const minInterval = 5;
 const maxInterval = 15;
@@ -31,18 +31,13 @@ const adjustRate = (player: Player) => {
   }
 };
 
-const rateLimit = (player: Player) => {
-  const lastLog = player.log[0];
-  const drift = new Date().getTime() - lastLog.date.getTime();
-  return player.question_interval * 1000 - drift;
-};
-
 type QuestionInput =
   | string
   | number
   | number[]
   | [number, number]
   | [number[], number]; // Adjust based on actual types
+
 type QuestionType = Question<QuestionInput>;
 
 function roundToQuestion({ round, mode }: State, player: Player): QuestionType {
@@ -53,7 +48,7 @@ function roundToQuestion({ round, mode }: State, player: Player): QuestionType {
   const availableQuestions = questions.slice(windowStart, windowEnd);
   return availableQuestions[
     Math.floor(Math.random() * availableQuestions.length)
-  ];
+  ] as QuestionType;
 }
 
 export async function askPlayerQuestion(state: State, player: Player) {
