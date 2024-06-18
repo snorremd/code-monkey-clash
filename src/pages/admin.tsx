@@ -1,6 +1,4 @@
-import { cookie } from "@elysiajs/cookie";
 import { Elysia, type ValidationError, t } from "elysia";
-import { htmx } from "elysia-htmx";
 import { diffNow, formatDuration, mapValidationError } from "../helpers";
 import { HTMLLayout, HXLayout } from "../layouts/main";
 import { gameQuestions } from "../game/questions";
@@ -39,7 +37,7 @@ const AdminLoginForm = ({ fieldErrors, secret }: FormProps) => {
             value={secret}
           />
           {fieldErrors["/secret"] ? (
-            <div class="label-text-alt mt-2 text-error">
+            <div class="label-text-alt mt-2 text-error" safe>
               {fieldErrors["/secret"]}
             </div>
           ) : null}
@@ -80,11 +78,15 @@ const Stats = ({ state }: RoundProps) => {
     >
       <div class="stat place-items-center">
         <span class="stat-title">Game</span>
-        <span class="stat-value">{timeSinceGame}</span>
+        <span class="stat-value" safe>
+          {timeSinceGame}
+        </span>
       </div>
       <div class="stat place-items-center">
         <span class="stat-title">Round</span>
-        <span class="stat-value">{timeSinceGame}</span>
+        <span class="stat-value" safe>
+          {timeSinceGame}
+        </span>
       </div>
       <div class="stat place-items-center">
         <span class="stat-title">Players</span>
@@ -214,11 +216,12 @@ const Player = (player: State["players"][number]) => {
           hx-boost="true"
           hx-target="#content"
           hx-swap="outerHTML"
+          safe
         >
           {player.nick}
         </a>
       </td>
-      <td>{player.url}</td>
+      <td safe>{player.url}</td>
       <td>{player.log?.[0]?.score ?? 0}</td>
       <td>
         {player.playing ? (
@@ -277,6 +280,7 @@ const Admin = ({ state }: AdminProps) => {
               {state.players
                 .toSorted((a, b) => a.nick.localeCompare(b.nick))
                 .map((player) => (
+                  // biome-ignore lint/correctness/useJsxKeyInIterable: Don't need it here
                   <Player {...player} />
                 ))}
             </tbody>
@@ -288,7 +292,7 @@ const Admin = ({ state }: AdminProps) => {
 };
 
 export const plugin = basePluginSetup()
-  .get("/admin", ({ hx, cookie, store: { state } }) => {
+  .get("/admin", ({ htmx, cookie: { user }, store: { state } }) => {
     const header = (
       <div class="">
         <a href="/admin/logout" class="btn btn-ghost">
@@ -297,38 +301,42 @@ export const plugin = basePluginSetup()
       </div>
     );
 
-    if (cookie.user === "admin") {
-      const Layout = hx.isHTMX ? HXLayout : HTMLLayout;
+    if (user.value === "admin") {
+      const Layout = htmx.is ? HXLayout : HTMLLayout;
       return (
         <Layout page="Admin" header={header}>
           <Admin state={state} />
         </Layout>
       );
     }
-    const Layout = hx.isHTMX ? HXLayout : HTMLLayout;
+    const Layout = htmx.is ? HXLayout : HTMLLayout;
     return (
       <Layout page="Sign Up" header={header}>
         <AdminLoginForm fieldErrors={{}} />
       </Layout>
     );
   })
-  .get("/admin/time", ({ hx, store: { state } }) => {
+  .get("/admin/time", ({ store: { state } }) => {
     return <Stats state={state} />;
   })
   .post(
     "/admin/login",
-    ({ body: { secret }, hx, set, setCookie }) => {
+    ({ body: { secret }, htmx, set, cookie: { user } }) => {
       const fieldErrors: Record<string, string> = {};
 
       if (secret !== Bun.env.CMC_SECRET) {
         fieldErrors["/secret"] = "Invalid secret";
       } else {
-        setCookie("user", "admin");
+        user.set({
+          value: "admin",
+          expires: new Date(Date.now() + 1000 * 60 * 60),
+          httpOnly: true,
+        });
       }
 
       if (Object.keys(fieldErrors).length) {
         set.status = 400;
-        const Layout = hx.isHTMX ? HXLayout : HTMLLayout;
+        const Layout = htmx.is ? HXLayout : HTMLLayout;
         return (
           <Layout page="Admin">
             <AdminLoginForm fieldErrors={fieldErrors} secret={""} />
@@ -336,8 +344,8 @@ export const plugin = basePluginSetup()
         );
       }
 
-      if (hx.isHTMX) {
-        hx.redirect("/admin");
+      if (htmx.is) {
+        htmx.redirect("/admin");
       } else {
         set.redirect = "/admin";
       }
@@ -346,8 +354,8 @@ export const plugin = basePluginSetup()
       body: t.Object({
         secret: t.String({}),
       }),
-      error: ({ code, error, hx, set }) => {
-        const Layout = hx.isHTMX ? HXLayout : HTMLLayout;
+      error: ({ code, error, htmx, set }) => {
+        const Layout = htmx.is ? HXLayout : HTMLLayout;
         if (code === "VALIDATION") {
           set.status = 200;
           const errors = mapValidationError(error as ValidationError);
@@ -367,11 +375,11 @@ export const plugin = basePluginSetup()
   )
   .post(
     "/admin/remove",
-    ({ body: { uuid }, hx, set, store: { state } }) => {
+    ({ body: { uuid }, htmx, set, store: { state } }) => {
       removePlayer(state, uuid);
-      if (!hx.isHTMX) {
+      if (!htmx.is) {
         set.redirect = "/admin";
-        hx.redirect("/admin");
+        htmx.redirect("/admin");
       } else {
         return <></>;
       }
@@ -382,7 +390,7 @@ export const plugin = basePluginSetup()
       }),
     }
   )
-  .post("/admin/start-demo", ({ hx, set, store: { state } }) => {
+  .post("/admin/start-demo", ({ set, store: { state } }) => {
     startGame(state, "demo");
     for (const player of state.players) {
       askPlayerQuestion(state, player);
@@ -390,11 +398,11 @@ export const plugin = basePluginSetup()
 
     set.redirect = "/admin";
   })
-  .post("/admin/stop-game", ({ hx, set, store: { state } }) => {
-    const Layout = hx.isHTMX ? HXLayout : HTMLLayout;
+  .post("/admin/stop-game", ({ htmx, set, store: { state } }) => {
+    const Layout = htmx.is ? HXLayout : HTMLLayout;
     state.status = "stopped";
 
-    if (hx.isHTMX) {
+    if (htmx.is) {
       return (
         <Layout page="Admin">
           <PlayOrStop state={state} />

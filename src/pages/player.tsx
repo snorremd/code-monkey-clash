@@ -1,6 +1,6 @@
 import { t } from "elysia";
 import { escape as htmlEscape } from "html-escaper";
-import { FullScreenLayout, HTMLLayout, HXLayout } from "../layouts/main";
+import { HTMLLayout, HXLayout } from "../layouts/main";
 import { type Player, plugin as statePlugin, type State } from "../state";
 import { basePluginSetup } from "../plugins";
 
@@ -21,7 +21,9 @@ const PlayerStats = ({ state, player }: PlayerLayoutProps) => {
     >
       <div class="stat place-items-center">
         <span class="stat-title">Nick</span>
-        <span class="stat-value">{player.nick}</span>
+        <span class="stat-value" safe>
+          {player.nick}
+        </span>
       </div>
       <div class="stat place-items-center">
         <span class="stat-title">Round</span>
@@ -90,12 +92,14 @@ const QuestionTable = (player: Player) => {
           {
             // For performance reasons, only show the last 50 logs
             player.log.slice(0, 50).map((log) => (
+              // biome-ignore lint/correctness/useJsxKeyInIterable: Kita html
               <tr class="odd:bg-base-300">
-                <th>{new Date(log.date).toLocaleTimeString()}</th>
-                <td>{log.question}</td>
+                <th safe>{new Date(log.date).toLocaleTimeString()}</th>
+                <td safe>{log.question}</td>
                 <td>
                   {log.answer ? (
                     <span
+                      safe
                       class={`${log.score > 0 ? "text-success" : "text-error"}`}
                     >
                       {htmlEscape(log.answer).substring(0, 500)}
@@ -132,8 +136,8 @@ const PlayerLayout = ({ player, state }: PlayerLayoutProps) => {
 
 export const plugin = basePluginSetup().get(
   "/players/:uuid",
-  ({ hx, params: { uuid }, store: { state } }) => {
-    const Layout = hx.isHTMX ? HXLayout : HTMLLayout;
+  ({ htmx, params: { uuid }, store: { state } }) => {
+    const Layout = htmx.is ? HXLayout : HTMLLayout;
     const player = state.players.find((p) => p.uuid === uuid);
 
     if (!player) {

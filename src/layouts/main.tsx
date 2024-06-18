@@ -8,7 +8,7 @@ export const HTMLLayout = ({ page, header, children }: LayoutProps) => {
   return (
     <html lang="en" class="h-full">
       <head>
-        <title>{page} - Extreme Startup</title>
+        <title safe>{page} - Extreme Startup</title>
         <link rel="stylesheet" href="/public/tailwind.css" />
         <script src="/public/htmx.min.js" />
         <script src="/public/response-targets.js" />
@@ -20,13 +20,13 @@ export const HTMLLayout = ({ page, header, children }: LayoutProps) => {
               Code Monkey Clash
             </a>
           </div>
-          {header}
+          {header as "safe"}
         </header>
         <main
           id="main"
           class="z-100 min-w-full min-h-screen flex flex-col grow py-16 px-8"
         >
-          {children}
+          {children as "safe"}
         </main>
         <footer class="fixed bg-base-100 bg-opacity-20 inset-x-0 bottom-0 z-50 text-neutral-content text-end p-4">
           A game by{" "}
@@ -43,7 +43,7 @@ export const HeroLayout = ({ page, children }: LayoutProps) => {
   return (
     <HTMLLayout page={page}>
       <div class="hero-content text-center text-neutral-content">
-        {children}
+        {children as "safe"}
       </div>
       {/* Display credit in the bottom right corner */}
       <div class="absolute bottom-0 right-0 p-4 text-xs text-neutral-content">
@@ -68,8 +68,8 @@ export const HeroLayout = ({ page, children }: LayoutProps) => {
 export const HXLayout = ({ page, children }: LayoutProps) => {
   return (
     <>
-      <title>{page} - Extreme Startup</title>
-      {children}
+      <title safe>{page} - Extreme Startup</title>
+      {children as "safe"}
     </>
   );
 };

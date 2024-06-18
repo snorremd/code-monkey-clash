@@ -31,7 +31,7 @@ const Form = ({ fieldErrors, nick, url }: FormProps) => {
             value={nick}
           />
           {fieldErrors["/nick"] ? (
-            <div class="label-text-alt mt-2 text-error">
+            <div class="label-text-alt mt-2 text-error" safe>
               {fieldErrors["/nick"]}
             </div>
           ) : null}
@@ -50,7 +50,7 @@ const Form = ({ fieldErrors, nick, url }: FormProps) => {
             For example: http://192.168.0.132:3000
           </label>
           {fieldErrors["/url"] ? (
-            <div class="label-text-alt mt-2 text-error">
+            <div class="label-text-alt mt-2 text-error" safe>
               {fieldErrors["/url"]}
             </div>
           ) : null}
@@ -64,8 +64,8 @@ const Form = ({ fieldErrors, nick, url }: FormProps) => {
 };
 
 export const plugin = basePluginSetup()
-  .get("/signup", ({ hx }) => {
-    const Layout = hx.isHTMX ? HXLayout : HTMLLayout;
+  .get("/signup", ({ htmx }) => {
+    const Layout = htmx.is ? HXLayout : HTMLLayout;
 
     return (
       <Layout page="Sign Up">
@@ -75,7 +75,7 @@ export const plugin = basePluginSetup()
   })
   .post(
     "/signup",
-    ({ body: { nick, url }, hx, set, store: { state } }) => {
+    ({ body: { nick, url }, htmx, set, store: { state } }) => {
       const fieldErrors: Record<string, string> = {};
 
       if (state.players.find((p) => p.nick === nick)) {
@@ -88,7 +88,7 @@ export const plugin = basePluginSetup()
       // If field errors not empty, return Form with errors
       if (Object.keys(fieldErrors).length) {
         set.status = 400;
-        const Layout = hx.isHTMX ? HXLayout : HTMLLayout;
+        const Layout = htmx.is ? HXLayout : HTMLLayout;
         return (
           <Layout page="Sign Up">
             <Form fieldErrors={fieldErrors} nick={nick} url={url} />
@@ -97,8 +97,8 @@ export const plugin = basePluginSetup()
       }
 
       const uuid = addPlayer(state, { nick, url });
-      if (hx.isHTMX) {
-        hx.redirect(`/players/${uuid}`);
+      if (htmx.is) {
+        htmx.redirect(`/players/${uuid}`);
       } else {
         set.redirect = `/players/${uuid}`;
       }
@@ -117,8 +117,8 @@ export const plugin = basePluginSetup()
             "Should be a valid host URI with scheme, hostname/ip, and optionally a port",
         }),
       }),
-      error: ({ code, error, hx, set, body: { nick, url } }) => {
-        const Layout = hx.isHTMX ? HXLayout : HeroLayout;
+      error: ({ code, error, htmx, set, body: { nick, url } }) => {
+        const Layout = htmx.is ? HXLayout : HeroLayout;
         if (code === "VALIDATION") {
           set.status = 200;
           const errors = mapValidationError(error as ValidationError);

@@ -1,7 +1,8 @@
-import { HTMLLayout } from "../layouts/main";
-import { basePluginSetup } from "../plugins";
+import { HTMLLayout } from "../../layouts/main";
+import { basePluginSetup } from "../../plugins";
 
-export const plugin = basePluginSetup().get("/", ({ hx }) => {
+export const plugin = basePluginSetup().get("/", ({ set }) => {
+  set.status = 404;
   const header = (
     <nav hx-boost="true" hx-target="#main">
       <a href="/admin" class="btn">
