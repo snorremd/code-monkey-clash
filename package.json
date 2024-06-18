@@ -30,7 +30,8 @@
     "concurrently": "^8.2.2",
     "daisyui": "^4.12.2",
     "mitata": "^0.1.11",
-    "tailwindcss": "^3.4.4"
+    "tailwindcss": "^3.4.4",
+    "typescript": "^5.4.5"
   },
   "module": "src/index.js"
 }
