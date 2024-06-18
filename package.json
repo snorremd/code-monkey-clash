@@ -12,7 +12,8 @@
     "format:check": "biome format ./src",
     "format": "biome format ./src --write",
     "lint": "biome lint ./src",
-    "check": "biome check --write ./src"
+    "check": "biome check --write ./src",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@elysiajs/static": "^1.0.3",
