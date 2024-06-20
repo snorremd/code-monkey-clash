@@ -1,5 +1,10 @@
 # Code Monkey Clash
 
+Code Monkey Clash is a code competition game where players compete to solve programming challenges.
+It is inspired by the [Extreme Startup](https://github.com/rchatley/extreme_startup) workshop.
+The code is implemented using Bun, TypeScript, ElysiaJS, HTMX, and Tailwind CSS with DaisyUI.
+Feel free to use it for your own code competition or to learn about the technologies used.
+
 ## Running server
 
 You can run from source with [bun](https://bun.sh):
@@ -83,6 +88,19 @@ This time however I'm opting to use a CSS component library on top called [Daisy
 DaisyUI provides pre-defined components like buttons, inputs, etc that use the Tailwind CSS utility classes under the hood.
 This way I get components with consistent look and feel while still having the flexibility of Tailwind CSS with a consistent look and feel.
 The style I'm aiming for is a neon-futuristic look with dark background and bright neon colors.
+
+### Bun workers for player handling and state management
+
+Bun, like other JS runtimes, run all work in a single thread by default.
+This is fine for most web servers where timing is not critical, and you can scale horizontally to handle more requests.
+In this game however, timing is critical, and we need to handle multiple players concurrently.
+
+This issue is solved by running each player's game loop in a separate worker.
+The worker runs the game loop as an interval and communicates with the main thread using messages.
+No matter how much work the main thread has, the worker will run at the same interval and keep the game running smoothly.
+
+A separate worker thread is also used to persist the game state to disk.
+This way we can block the write operation to garantee atomic writes, without blocking the game loop or the server.
 
 ### Real-time communication with server-sent events
 

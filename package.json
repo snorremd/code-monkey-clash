@@ -4,7 +4,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev:server": "bun --hot run src/index.tsx",
-    "dev:client": "bun build ./src/client.ts --outdir ./public --watch",
+    "dev:client": "bun build ./src/client/client.ts --outdir ./public --watch",
     "dev:tailwind": "tailwindcss -i ./src/tailwind.css -o ./public/tailwind.css --watch",
     "dev": "concurrently \"bun:dev:server\" \"bun:dev:client\" \"bun:dev:tailwind\"",
     "build:tailwind": "tailwindcss -i ./src/tailwind.css -o ./public/tailwind.css",
@@ -14,18 +14,22 @@
     "format": "biome format ./src --write",
     "lint": "biome lint ./src",
     "check": "biome check --write ./src",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "benchmark": "bun run --target=bun tooling/benchmark.ts"
   },
   "dependencies": {
     "@elysiajs/static": "^1.0.3",
+    "@kitajs/html": "^4.1.0",
     "@kitajs/ts-html-plugin": "4.0.1",
     "elysia": "^1.0.24",
     "html-escaper": "^3.0.3",
-    "htmx.org": "^1.9.12"
+    "htmx.org": "^1.9.12",
+    "lit": "^3.1.4"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.8.1",
     "@tailwindcss/typography": "^0.5.13",
+    "@types/bun": "^1.1.5",
     "@types/html-escaper": "^3.0.2",
     "bun-types": "latest",
     "concurrently": "^8.2.2",
