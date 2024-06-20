@@ -20,4 +20,11 @@ declare namespace JSX {
 		popovertarget?: undefined | string;
 		popovertargetaction?: undefined | string;
 	}
+
+	interface IntrinsicElements {
+		"cmc-counter": {
+			count?: boolean;
+			dateTime?: string;
+		};
+	}
 }

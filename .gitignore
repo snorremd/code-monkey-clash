@@ -46,3 +46,4 @@ dist
 public/tailwind.css
 state.json
 .env.local
+public/client.js
