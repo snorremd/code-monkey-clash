@@ -12,6 +12,7 @@ export const HTMLLayout = ({ page, header, children }: LayoutProps) => {
 				<link rel="stylesheet" href="/public/tailwind.css" />
 				<script src="/public/htmx.min.js" />
 				<script src="/public/response-targets.js" />
+				<script src="/public/client.js" />
 			</head>
 			<body class="bg-base-100">
 				<header class="navbar absolute inset-x-0 top-0 z-50 bg-base-300">

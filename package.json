@@ -4,8 +4,9 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev:server": "bun --hot run src/index.tsx",
+    "dev:client": "bun build ./src/client.ts --outdir ./public --watch",
     "dev:tailwind": "tailwindcss -i ./src/tailwind.css -o ./public/tailwind.css --watch",
-    "dev": "concurrently \"npm:dev:server\" \"npm:dev:tailwind\"",
+    "dev": "concurrently \"bun:dev:server\" \"bun:dev:client\" \"bun:dev:tailwind\"",
     "build:tailwind": "tailwindcss -i ./src/tailwind.css -o ./public/tailwind.css",
     "build:server": "bun build --target=bun ./src/index.tsx --outfile=dist/index.js",
     "build": "bun run --target=bun build:server && npm run build:tailwind",

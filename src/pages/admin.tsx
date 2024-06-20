@@ -56,12 +56,7 @@ interface RoundProps {
 
 const Stats = ({ state }: RoundProps) => {
 	const { mode } = state;
-	const timeSinceGame = formatDuration(
-		state.gameStartedAt ? diffNow(new Date(state.gameStartedAt)) : 0,
-	);
-	const timeSinceRound = formatDuration(
-		state.roundStartedAt ? diffNow(new Date(state.roundStartedAt)) : 0,
-	);
+
 	const totalRequests = state.players.reduce(
 		(acc, player) => acc + player.log.length,
 		0,
@@ -73,28 +68,33 @@ const Stats = ({ state }: RoundProps) => {
 			class="stats stats-horizontal text-2xl max-w-full"
 			hx-get="/admin/time"
 			hx-swap="outerHTML"
-			hx-trigger="every 5s"
 			hx-target="this"
 		>
 			<div class="stat place-items-center">
 				<span class="stat-title">Game</span>
-				<span class="stat-value" safe>
-					{timeSinceGame}
+				<span class="stat-value font-mono">
+					<cmc-counter
+						count={state.status === "playing"}
+						dateTime={state.gameStartedAt}
+					/>
 				</span>
 			</div>
 			<div class="stat place-items-center">
 				<span class="stat-title">Round</span>
-				<span class="stat-value" safe>
-					{timeSinceGame}
+				<span class="stat-value font-mono">
+					<cmc-counter
+						count={state.status === "playing"}
+						dateTime={state.roundStartedAt}
+					/>
 				</span>
 			</div>
 			<div class="stat place-items-center">
 				<span class="stat-title">Players</span>
-				<span class="stat-value">{state.players.length}</span>
+				<span class="stat-value font-mono">{state.players.length}</span>
 			</div>
 			<div class="stat place-items-center">
 				<span class="stat-title">Total requests</span>
-				<span class="stat-value">{totalRequests}</span>
+				<span class="stat-value font-mono">{totalRequests}</span>
 			</div>
 		</div>
 	);

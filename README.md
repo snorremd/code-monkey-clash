@@ -68,11 +68,23 @@ ElysiaJS is inspired by frameworks like Express, but has superb TypeScript suppo
 The game server will be implemented as a simple ElysiaJS server where state is managed in-memory for simplicity.
 To make things more robust, serialization and deserialization of state will be implemented so that the server can be restarted without losing state.
 
+### Web Components for certain live updates
+
+While almost all of the UI is server-side rendered, and then updated using htmx requests, some parts of the UI will be updated on the client side.
+This includes things like the game and round timers and the score graphs.
+For these parts I'm implementing simple Web Components that can be updated in real-time using client side JavaScript.
+While this is a bit of a departure from the server-side rendered approach, it is necessary to avoid spamming the server with requests.
+Asking the server to count up the time every second is not a good use of resources, so the client will handle these updates.
+
+### Styling with Tailwind CSS and DaisyUI
+
 For styling I'm going for familiar technology, namely [Tailwind CSS](https://tailwindcss.com/).
 This time however I'm opting to use a CSS component library on top called [DaisyUI](https://daisyui.com/).
 DaisyUI provides pre-defined components like buttons, inputs, etc that use the Tailwind CSS utility classes under the hood.
 This way I get components with consistent look and feel while still having the flexibility of Tailwind CSS with a consistent look and feel.
 The style I'm aiming for is a neon-futuristic look with dark background and bright neon colors.
+
+### Real-time communication with server-sent events
 
 For events and real-time communication server-sent events will be used.
 This is a simple and efficient way to push events from the server to the client without having to deal with WebSockets.
