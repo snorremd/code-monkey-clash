@@ -1,16 +1,15 @@
 import { Elysia } from "elysia";
-import { html } from "./middleware/html/html";
-import { htmx } from "./middleware/htmx/htmx";
-
-import { plugin as statePlugin } from "./state";
+import { htmlPlugin } from "./middleware/html/html";
+import { htmxPlugin } from "./middleware/htmx/htmx";
+import { statePlugin } from "./middleware/state/state";
 
 export const basePluginSetup = () => {
-	return new Elysia({
-		serve: {
-			reusePort: true,
-		},
-	})
-		.use(html())
-		.use(htmx())
-		.use(statePlugin);
+  return new Elysia({
+    serve: {
+      reusePort: true,
+    },
+  })
+    .use(htmlPlugin())
+    .use(statePlugin())
+    .use(htmxPlugin());
 };
