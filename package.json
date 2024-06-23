@@ -19,6 +19,8 @@
   },
   "dependencies": {
     "@elysiajs/static": "^1.0.3",
+    "@elysiajs/stream": "^1.0.2",
+    "@formkit/auto-animate": "^0.8.2",
     "@kitajs/html": "^4.1.0",
     "@kitajs/ts-html-plugin": "4.0.1",
     "elysia": "^1.0.24",

@@ -43,6 +43,8 @@ interface WorkerState {
   /** Game mode: to determine which question set to use */
   mode?: GameMode;
 
+  /** Counter, so we can id answers */
+  counter: number;
   /** Question interval to adjust depending on player performance */
   questionInterval: number;
   /** Keep track of player score to allow adjusting question interval */
@@ -58,6 +60,7 @@ const workerState: WorkerState = {
   url: "",
   round: 0,
   status: "stopped",
+  counter: 0,
   questionInterval: 10000,
   scores: [],
 };
@@ -84,6 +87,7 @@ async function askPlayerQuestion(
     score: workerState.scores[0] ?? 0,
     points: 0,
     questionInterval: workerState.questionInterval,
+    id: workerState.counter++,
   };
 
   try {

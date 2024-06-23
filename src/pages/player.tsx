@@ -1,8 +1,15 @@
 import { t } from "elysia";
+import { nanoid } from "nanoid";
 import { escape as htmlEscape } from "html-escaper";
 import { HTMLLayout, HXLayout } from "../layouts/main";
 import { basePluginSetup } from "../plugins";
-import { type Player, type State, plugin as statePlugin } from "../game/state";
+import {
+  type Player,
+  type State,
+  plugin as statePlugin,
+  type PlayerLog,
+} from "../game/state";
+import Stream from "@elysiajs/stream";
 
 interface PlayerLayoutProps {
   player: Player;
@@ -13,7 +20,6 @@ const PlayerStats = ({ state, player }: PlayerLayoutProps) => {
   const correct = player.log.filter((log) => log.points > 0).length;
   const total = player.log.length;
   const ratio = correct / total;
-  const questionRate = player.log[0]?.questionInterval ?? 0;
 
   return (
     <div
@@ -74,6 +80,29 @@ export const PlayerControl = ({ player }: { player: Player }) => {
   );
 };
 
+const QuestionTableRow = ({ log }: { log: PlayerLog }) => {
+  return (
+    <tr class="odd:bg-base-300" id={`log-${log.id}`}>
+      <th safe>{new Date(log.date).toLocaleTimeString()}</th>
+      <td safe>{log.question}</td>
+      <td>
+        {log.answer ? (
+          <span safe class={`${log.score > 0 ? "text-success" : "text-error"}`}>
+            {htmlEscape(log.answer).substring(0, 500)}
+          </span>
+        ) : (
+          "N/A"
+        )}
+      </td>
+      <td>{log.statusCode ?? "N/A"}</td>
+      <td>{log.error ? <span class="text-error">{log.error}</span> : null}</td>
+      <td>{(log.questionInterval ?? 0) / 1000}</td>
+      <td>{log.points}</td>
+      <td>{log.score}</td>
+    </tr>
+  );
+};
+
 const QuestionTable = (player: Player) => {
   return (
     <div class="rounded-2xl z-10 bg-base-100 p-8 bg-opacity-80 backdrop-blur-sm drop-shadow-lg flex flex-col grow overflow-x-auto min-h-full">
@@ -90,36 +119,18 @@ const QuestionTable = (player: Player) => {
             <th>Score</th>
           </tr>
         </thead>
-        <tbody>
+        <tbody
+          class="auto-animate"
+          hx-ext="sse"
+          sse-connect={`/players/${player.uuid}/sse`}
+          sse-swap="log"
+          hx-swap="afterbegin"
+        >
           {
             // For performance reasons, only show the last 50 logs
             player.log.slice(0, 50).map((log) => (
-              // biome-ignore lint/correctness/useJsxKeyInIterable: Kita html
-              <tr class="odd:bg-base-300">
-                <th safe>{new Date(log.date).toLocaleTimeString()}</th>
-                <td safe>{log.question}</td>
-                <td>
-                  {log.answer ? (
-                    <span
-                      safe
-                      class={`${log.score > 0 ? "text-success" : "text-error"}`}
-                    >
-                      {htmlEscape(log.answer).substring(0, 500)}
-                    </span>
-                  ) : (
-                    "N/A"
-                  )}
-                </td>
-                <td>{log.statusCode ?? "N/A"}</td>
-                <td>
-                  {log.error ? (
-                    <span class="text-error">{log.error}</span>
-                  ) : null}
-                </td>
-                <td>{(log.questionInterval ?? 0) / 1000}</td>
-                <td>{log.points}</td>
-                <td>{log.score}</td>
-              </tr>
+              // biome-ignore lint/correctness/useJsxKeyInIterable: <explanation>
+              <QuestionTableRow log={log} />
             ))
           }
         </tbody>
@@ -137,38 +148,63 @@ export const PlayerLayout = ({ player, state }: PlayerLayoutProps) => {
   );
 };
 
-export const plugin = basePluginSetup().get(
-  "/players/:uuid",
-  ({ htmx, params: { uuid }, store: { state } }) => {
-    console.log("Players uuid page htmx is?", htmx.is);
-    const Layout = htmx.is ? HXLayout : HTMLLayout;
-    const player = state.players.find((p) => p.uuid === uuid);
+export const plugin = basePluginSetup()
+  .get(
+    "/players/:uuid",
+    ({ htmx, params: { uuid }, store: { state } }) => {
+      const Layout = htmx.is ? HXLayout : HTMLLayout;
+      const player = state.players.find((p) => p.uuid === uuid);
 
-    if (!player) {
+      if (!player) {
+        return (
+          <Layout page="User">
+            <div class="flex flex-col">
+              <h1 class="">Player not found</h1>
+              <p>
+                <a class="link link-success" href="/signup">
+                  Create a new player
+                </a>{" "}
+                to compete.
+              </p>
+            </div>
+          </Layout>
+        );
+      }
+
       return (
-        <Layout page="User">
-          <div class="flex flex-col">
-            <h1 class="">Player not found</h1>
-            <p>
-              <a class="link link-success" href="/signup">
-                Create a new player
-              </a>{" "}
-              to compete.
-            </p>
-          </div>
+        <Layout page="User" header={<PlayerControl player={player} />}>
+          <PlayerLayout state={state} player={player} />
         </Layout>
       );
+    },
+    {
+      params: t.Object({
+        uuid: t.String(),
+      }),
+    }
+  )
+  .get("/players/:uuid/sse", ({ params: { uuid }, set, store: { state } }) => {
+    const player = state.players.find((p) => p.uuid === uuid);
+    console.log("Establish SSE connection for player", player?.nick ?? uuid);
+
+    if (!player) {
+      // No player found, so return 404
+      console.error("Player not found", uuid);
+      set.status = 404;
+      return;
     }
 
-    return (
-      <Layout page="User" header={<PlayerControl player={player} />}>
-        <PlayerLayout state={state} player={player} />
-      </Layout>
-    );
-  },
-  {
-    params: t.Object({
-      uuid: t.String(),
-    }),
-  }
-);
+    const stream = new Stream();
+    const callbackId = crypto.randomUUID();
+
+    state.playerLogListeners[callbackId] = (log) => {
+      const id = nanoid();
+      stream.send(
+        `id: ${id}\nevent: log\ndata: ${(<QuestionTableRow log={log} />)}\n\n`
+      );
+    };
+
+    set.status = 200;
+
+    return stream;
+  });
