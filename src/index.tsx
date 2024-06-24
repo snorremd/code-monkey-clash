@@ -25,6 +25,9 @@ const app = new Elysia({
   .get("/public/response-targets.js", () =>
     Bun.file("node_modules/htmx.org/dist/ext/response-targets.js")
   )
+  .get("/public/sse.js", () =>
+    Bun.file("node_modules/htmx.org/dist/ext/sse.js")
+  )
   .use(adminPlugin)
   .use(homePlugin)
   .use(signupPlugin)

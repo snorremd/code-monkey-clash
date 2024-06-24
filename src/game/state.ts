@@ -1,11 +1,13 @@
 import { Elysia } from "elysia";
 import type { PlayerWorker } from "./player-worker";
+import type Stream from "@elysiajs/stream";
 
 // Setup types for the game state including player logs, workers, etc
 export type GameStatus = "playing" | "paused" | "stopped";
 export type GameMode = "demo" | "game";
 
 export interface PlayerLog {
+  id: number;
   date: string;
   score: number;
   points: number;
@@ -14,11 +16,12 @@ export interface PlayerLog {
   statusCode?: number;
   error?: string;
   questionInterval?: number;
+  answerRatio: number;
 }
 
 export interface Player {
   /** A Bun worker running player-worker.ts script */
-  worker: PlayerWorker;
+  worker?: PlayerWorker;
   uuid: string;
   nick: string;
   url: string;
@@ -28,6 +31,11 @@ export interface Player {
   log: PlayerLog[];
 }
 
+interface LogListener {
+  cb: (event: PlayerLog) => void;
+  playerId: string;
+}
+
 export interface State {
   mode?: GameMode;
   status: GameStatus;
@@ -35,6 +43,12 @@ export interface State {
   roundStartedAt?: string; // ISO date time
   round: number;
   players: Player[];
+  /**
+   * A record of listening callback functions to call for each new PlayerLog function
+   * The string key is the listener ID so it can later remove itself if the SSE stream
+   * is closed.
+   */
+  playerLogListeners: Record<string, LogListener>;
 }
 
 const stateLocation = "./state.json";
@@ -53,6 +67,7 @@ async function loadState() {
         round: 0,
         players: [],
         status: "stopped",
+        playerLogListeners: {},
       } satisfies State);
 }
 
@@ -63,14 +78,56 @@ async function saveState(state: State) {
       ...p,
       worker: undefined,
     })),
-  };
+    playerLogListeners: {},
+  } satisfies State;
   stateWorker.postMessage(serializable);
 }
 
 // Immediately load state from file system
 export const state = (await loadState()) as State;
 
+if (state.status === "playing") {
+  state.status = "paused";
+  saveState(state);
+}
+
 type CreatePlayer = Pick<Player, "nick" | "url">;
+
+const newWorker = (player: Pick<Player, "uuid" | "url">) => {
+  const worker = new Worker(
+    new URL("./player-worker.ts", import.meta.url)
+  ) as PlayerWorker;
+
+  worker.postMessage({
+    type: "player-joined",
+    uuid: player.uuid,
+    url: player.url,
+  });
+
+  worker.onmessage = (event) => {
+    const { type } = event.data;
+    switch (type) {
+      case "player-answer":
+        {
+          const { uuid, log } = event.data;
+          const player = state.players.find((p) => p.uuid === uuid);
+          if (player) {
+            player.log.unshift(log);
+          }
+          // We need to notify all relevant listeners about the new log
+          // Multiple listeners can be listening for the same player
+          for (const listener of Object.values(state.playerLogListeners).filter(
+            (l) => l.playerId === uuid
+          )) {
+            listener.cb(log);
+          }
+        }
+        break;
+    }
+  };
+
+  return worker;
+};
 
 /**
  * Create a new player and add it to the state.
@@ -87,37 +144,11 @@ export const addPlayer = (state: State, playerPayload: CreatePlayer) => {
     question_interval: 10,
     score: 0,
     playing: true,
-    worker: new Worker(
-      new URL("./player-worker.ts", import.meta.url)
-    ) as PlayerWorker,
   };
+
+  const worker = newWorker(newPlayer);
+  newPlayer.worker = worker;
   state.players.push(newPlayer);
-
-  console.log("Notify player worker about player joined");
-  // Pass initial player info to the player worker
-  newPlayer.worker.postMessage({
-    type: "player-joined",
-    uuid: newPlayer.uuid,
-    url: newPlayer.url,
-  });
-
-  console.log(
-    "Register worker message handler to process worker messages on main thread"
-  );
-  newPlayer.worker.onmessage = (event) => {
-    const { type } = event.data;
-    switch (type) {
-      case "player-answer":
-        {
-          const { uuid, log } = event.data;
-          const player = state.players.find((p) => p.uuid === uuid);
-          if (player) {
-            newPlayer.log.unshift(log);
-          }
-        }
-        break;
-    }
-  };
 
   console.log("Notify state worker about new state");
   saveState(state);
@@ -156,7 +187,7 @@ export const stopGame = (state: State) => {
   state.gameStartedAt = undefined;
   state.roundStartedAt = undefined;
   for (const player of state.players) {
-    player.worker.postMessage({ type: "game-stopped" });
+    player.worker?.postMessage({ type: "game-stopped" });
   }
 
   saveState(state);
@@ -165,7 +196,7 @@ export const stopGame = (state: State) => {
 export const pauseGame = (state: State) => {
   state.status = "paused";
   for (const player of state.players) {
-    player.worker.postMessage({ type: "game-paused" });
+    player.worker?.postMessage({ type: "game-paused" });
   }
 
   saveState(state);
@@ -187,6 +218,11 @@ export const resetGame = (state: State) => {
 export const continueGame = (state: State) => {
   state.status = "playing";
   for (const player of state.players) {
+    // If we've just restarted the server and resumed from a serialized state
+    // we need to create a new worker for the player
+    if (!player.worker) {
+      player.worker = newWorker(player);
+    }
     player.worker.postMessage({ type: "game-continued" });
   }
 

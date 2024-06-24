@@ -43,6 +43,10 @@ interface WorkerState {
   /** Game mode: to determine which question set to use */
   mode?: GameMode;
 
+  /** Counter, so we can id answers */
+  counter: number;
+  /** Count correct answers so we can calculate answer ratio */
+  correct: number;
   /** Question interval to adjust depending on player performance */
   questionInterval: number;
   /** Keep track of player score to allow adjusting question interval */
@@ -58,6 +62,8 @@ const workerState: WorkerState = {
   url: "",
   round: 0,
   status: "stopped",
+  counter: 0,
+  correct: 0,
   questionInterval: 10000,
   scores: [],
 };
@@ -75,6 +81,7 @@ async function askPlayerQuestion(
   question: QuestionType,
   now: Date
 ): Promise<PlayerLog> {
+  workerState.counter++;
   const input = question.randomInput();
   const q = question.question(input);
 
@@ -83,7 +90,9 @@ async function askPlayerQuestion(
     question: q,
     score: workerState.scores[0] ?? 0,
     points: 0,
+    answerRatio: workerState.correct / workerState.counter, // If answer is wrong
     questionInterval: workerState.questionInterval,
+    id: workerState.counter,
   };
 
   try {
@@ -94,7 +103,6 @@ async function askPlayerQuestion(
     if (response.status !== 200) {
       log.points = -10; // Penalize player for server error
       log.score = (workerState.scores[0] ?? 0) - 10;
-      log.statusCode = response.status;
       log.error = response.statusText;
       return log;
     }
@@ -103,8 +111,11 @@ async function askPlayerQuestion(
     const answer = await response.text();
 
     if (question.correctAnswer(answer, input)) {
+      workerState.correct++;
+      log.answerRatio = workerState.correct / workerState.counter;
       log.points = question.points;
       log.score = (workerState.scores[0] ?? 0) + question.points;
+      log.answerRatio;
       log.statusCode = response.status;
       log.answer = answer;
     } else {
