@@ -16,6 +16,7 @@ export interface PlayerLog {
   statusCode?: number;
   error?: string;
   questionInterval?: number;
+  answerRatio: number;
 }
 
 export interface Player {
@@ -30,6 +31,11 @@ export interface Player {
   log: PlayerLog[];
 }
 
+interface LogListener {
+  cb: (event: PlayerLog) => void;
+  playerId: string;
+}
+
 export interface State {
   mode?: GameMode;
   status: GameStatus;
@@ -42,7 +48,7 @@ export interface State {
    * The string key is the listener ID so it can later remove itself if the SSE stream
    * is closed.
    */
-  playerLogListeners: Record<string, (event: PlayerLog) => void>;
+  playerLogListeners: Record<string, LogListener>;
 }
 
 const stateLocation = "./state.json";
@@ -108,9 +114,12 @@ const newWorker = (player: Pick<Player, "uuid" | "url">) => {
           if (player) {
             player.log.unshift(log);
           }
-          // We need to notify all listeners about the new log
-          for (const listener of Object.values(state.playerLogListeners)) {
-            listener(log);
+          // We need to notify all relevant listeners about the new log
+          // Multiple listeners can be listening for the same player
+          for (const listener of Object.values(state.playerLogListeners).filter(
+            (l) => l.playerId === uuid
+          )) {
+            listener.cb(log);
           }
         }
         break;
