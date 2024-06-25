@@ -1,6 +1,6 @@
 import { Elysia } from "elysia";
 import type { PlayerWorker } from "./player-worker";
-import type Stream from "@elysiajs/stream";
+import type { GameEvent } from "./events";
 
 // Setup types for the game state including player logs, workers, etc
 export type GameStatus = "playing" | "paused" | "stopped";
@@ -31,11 +31,6 @@ export interface Player {
   log: PlayerLog[];
 }
 
-interface LogListener {
-  cb: (event: PlayerLog) => void;
-  playerId: string;
-}
-
 export interface State {
   mode?: GameMode;
   status: GameStatus;
@@ -44,11 +39,12 @@ export interface State {
   round: number;
   players: Player[];
   /**
-   * A record of listening callback functions to call for each new PlayerLog function
-   * The string key is the listener ID so it can later remove itself if the SSE stream
-   * is closed.
+   * A record of listening callback functions to call for each new game event.
+   * Allows UI-related logic to listen for new game events and update the UI via SSE.
+   * The key is a nanoid that identifies the listener and the value is the callback function.
+   * UI listeners can be added and removed dynamically as clients connect and disconnect.
    */
-  playerLogListeners: Record<string, LogListener>;
+  uiListeners: Record<string, (e: GameEvent) => void>;
 }
 
 const stateLocation = "./state.json";
@@ -67,7 +63,7 @@ async function loadState() {
         round: 0,
         players: [],
         status: "stopped",
-        playerLogListeners: {},
+        uiListeners: {},
       } satisfies State);
 }
 
@@ -78,7 +74,7 @@ async function saveState(state: State) {
       ...p,
       worker: undefined,
     })),
-    playerLogListeners: {},
+    uiListeners: {},
   } satisfies State;
   stateWorker.postMessage(serializable);
 }
@@ -108,6 +104,7 @@ const newWorker = (player: Pick<Player, "uuid" | "url">) => {
     const { type } = event.data;
     switch (type) {
       case "player-answer":
+      case "player-question":
         {
           const { uuid, log } = event.data;
           const player = state.players.find((p) => p.uuid === uuid);
@@ -116,10 +113,8 @@ const newWorker = (player: Pick<Player, "uuid" | "url">) => {
           }
           // We need to notify all relevant listeners about the new log
           // Multiple listeners can be listening for the same player
-          for (const listener of Object.values(state.playerLogListeners).filter(
-            (l) => l.playerId === uuid
-          )) {
-            listener.cb(log);
+          for (const listener of Object.values(state.uiListeners)) {
+            listener(event.data);
           }
         }
         break;
@@ -146,16 +141,28 @@ export const addPlayer = (state: State, playerPayload: CreatePlayer) => {
     playing: true,
   };
 
-  const worker = newWorker(newPlayer);
-  newPlayer.worker = worker;
   state.players.push(newPlayer);
-
-  console.log("Notify state worker about new state");
   saveState(state);
 
-  console.log("Return new player UUID");
+  for (const listener of Object.values(state.uiListeners)) {
+    listener({
+      type: "player-joined",
+      ...newPlayer,
+    });
+  }
+
   return newPlayer.uuid;
 };
+
+export function playerSurrender(state: State, uuid: string) {
+  const player = state.players.find((p) => p.uuid === uuid);
+  if (player) {
+    player.playing = false;
+    player.worker?.postMessage({ type: "player-left", uuid });
+    player.worker = undefined;
+    saveState(state);
+  }
+}
 
 export const removePlayer = (state: State, uuid: string) => {
   const player = state.players.find((p) => p.uuid === uuid);
@@ -173,6 +180,7 @@ export const startGame = (state: State, mode: State["mode"]) => {
 
   // Notify all player workers that the game has started
   for (const player of state.players) {
+    player.worker = newWorker(player);
     player.worker?.postMessage({
       type: "game-started",
       mode: mode ?? "demo",
@@ -226,34 +234,6 @@ export const continueGame = (state: State) => {
     player.worker.postMessage({ type: "game-continued" });
   }
 
-  saveState(state);
-};
-
-interface ChangeScoreProps {
-  state: State;
-  player: Player;
-  log: PlayerLog;
-  points: number;
-  statusCode?: number;
-  error?: string;
-  answer?: string;
-}
-
-export const changeScore = ({
-  state,
-  player,
-  log,
-  points,
-  statusCode,
-  error,
-  answer,
-}: ChangeScoreProps) => {
-  player.score += points;
-  log.score = player.score;
-  log.points = points;
-  log.statusCode = statusCode;
-  log.error = error;
-  log.answer = answer;
   saveState(state);
 };
 

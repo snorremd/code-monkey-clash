@@ -1,9 +1,14 @@
 import { t } from "elysia";
-import { nanoid } from "nanoid";
 import { escape as htmlEscape } from "html-escaper";
 import { HTMLLayout, HXLayout } from "../layouts/main";
 import { basePluginSetup } from "../plugins";
-import type { Player, State, PlayerLog } from "../game/state";
+import {
+  type Player,
+  type State,
+  type PlayerLog,
+  playerSurrender,
+} from "../game/state";
+import { createSSEResponse } from "../middleware/sse/sse";
 
 interface PlayerLayoutProps {
   state: State;
@@ -54,14 +59,17 @@ const PlayerStats = ({ state, player, log }: PlayerStatsProps) => {
 
 export const PlayerControl = ({ player }: { player: Player }) => {
   return (
-    <form class="z-10 flex flex-row items-center" method="POST" action="">
+    <form
+      class="z-10 flex flex-row items-center"
+      method="POST"
+      action={`/players/${player.uuid}/surrender`}
+    >
       {player.playing ? (
         <button
           class="btn btn-outline btn-error"
           type="submit"
           hx-post={`/players/${player.uuid}/surrender`}
           hx-swap="outerHTML"
-          hx-target="#control"
         >
           Surrender
         </button>
@@ -71,7 +79,6 @@ export const PlayerControl = ({ player }: { player: Player }) => {
           type="submit"
           hx-post={`/players/${player.uuid}/play`}
           hx-swap="outerHTML"
-          hx-target="#control"
         >
           Rejoin
         </button>
@@ -82,7 +89,12 @@ export const PlayerControl = ({ player }: { player: Player }) => {
 
 const QuestionTableRow = ({ log }: { log: PlayerLog }) => {
   return (
-    <tr class="odd:bg-base-300" id={`log-${log.id}`}>
+    <tr
+      class="odd:bg-base-300"
+      id={`log-${log.id}`}
+      hx-swap="outerHTML"
+      sse-swap={`log-update-${log.id}`}
+    >
       <th safe>{new Date(log.date).toLocaleTimeString()}</th>
       <td safe>{log.question}</td>
       <td>
@@ -181,6 +193,12 @@ export const plugin = basePluginSetup()
       }),
     }
   )
+  .post(
+    "/players/:uuid/surrender",
+    ({ params: { uuid }, store: { state } }) => {
+      playerSurrender(state, uuid);
+    }
+  )
   .get(
     "/players/:uuid/sse",
     ({ params: { uuid }, set, store: { state }, request }) => {
@@ -192,55 +210,25 @@ export const plugin = basePluginSetup()
         set.status = 404;
         return;
       }
-
-      console.log("Establish SSE connection for player", player?.nick ?? uuid);
-
-      const id = nanoid();
-
-      // TODO: Implement lower level SSE to be able to clean up listeners
-      // when http client disconnects https://github.com/oven-sh/bun/issues/2443#issuecomment-1952993837
-      const stream = new ReadableStream({
-        start(controller) {
-          state.playerLogListeners[id] = {
-            playerId: player.uuid,
-            cb: (log) => {
-              controller.enqueue(
-                `id: ${nanoid()}\nevent: log\ndata: ${(
-                  <QuestionTableRow log={log} />
-                )}\n\n`
-              );
-
-              controller.enqueue(
-                `id: ${nanoid()}\nevent: stats\ndata: ${(
-                  <PlayerStats state={state} player={player} log={log} />
-                )}\n\n`
-              );
-            },
-          };
-
-          // If the http client disconnects, we need to clean up the listener
-          request.signal.onabort = () => {
-            console.log("SSE connection aborted");
-            if (state.playerLogListeners[id]) {
-              delete state.playerLogListeners[id];
-            }
-            controller.close();
-          };
-        },
-        cancel() {
-          console.log("SSE connection closed");
-          if (state.playerLogListeners[id]) {
-            delete state.playerLogListeners[id];
+      return createSSEResponse(state, request, [
+        (state, event) => {
+          console.log("Event", event);
+          if (event.type === "player-answer" && event.uuid === player.uuid) {
+            return [
+              {
+                event: "stats",
+                data: `${(
+                  <PlayerStats state={state} player={player} log={event.log} />
+                )}`,
+              },
+              {
+                event: "log",
+                data: `${(<QuestionTableRow log={event.log} />)}`,
+              },
+            ];
           }
+          return [];
         },
-      });
-
-      set.status = 200;
-      set.headers["Content-Type"] = "text/event-stream";
-      set.headers["Cache-Control"] = "no-cache";
-      // biome-ignore lint/complexity/useLiteralKeys: <explanation>
-      set.headers["Connection"] = "keep-alive";
-
-      return new Response(stream);
+      ]);
     }
   );

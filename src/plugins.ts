@@ -1,7 +1,7 @@
 import { Elysia } from "elysia";
 import { htmlPlugin } from "./middleware/html/html";
 import { htmxPlugin } from "./middleware/htmx/htmx";
-import { statePlugin } from "./middleware/state/state";
+import { state } from "./game/state";
 
 export const basePluginSetup = () => {
   return new Elysia({
@@ -9,7 +9,7 @@ export const basePluginSetup = () => {
       reusePort: true,
     },
   })
+    .state("state", state)
     .use(htmlPlugin())
-    .use(statePlugin())
     .use(htmxPlugin());
 };
