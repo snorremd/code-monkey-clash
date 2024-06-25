@@ -11,7 +11,9 @@ import {
   pauseGame,
   continueGame,
   resetGame,
+  type Player,
 } from "../game/state";
+import { createSSEResponse } from "../middleware/sse/sse";
 
 interface FormProps {
   secret?: string;
@@ -109,20 +111,23 @@ const PlayOrStop = ({ state }: RoundProps) => {
         <>
           <button
             type="submit"
-            formaction="/admin/start?mode=demo"
+            formmethod="POST"
+            formaction="/admin/start-game?mode=demo"
             class="btn btn-outline btn-warning"
           >
             Start Demo
           </button>
           <button
             type="submit"
-            formaction="/admin/start?mode=game"
+            formmethod="POST"
+            formaction="/admin/start-game?mode=game"
             class="btn btn-outline btn-success"
           >
             Start Game
           </button>
           <button
             type="submit"
+            formmethod="POST"
             formaction="/admin/reset-game"
             class="btn btn-outline btn-error"
           >
@@ -130,6 +135,7 @@ const PlayOrStop = ({ state }: RoundProps) => {
           </button>
           <button
             type="submit"
+            formmethod="POST"
             formaction="/admin/reset-state"
             class="btn btn-outline btn-error"
           >
@@ -215,7 +221,7 @@ const Round = ({ state }: RoundProps) => {
   );
 };
 
-const Player = (player: State["players"][number]) => {
+const PlayerRow = (player: Player) => {
   const rowId = `player-${player.uuid}`;
   return (
     <tr class="odd:bg-base-300" id={rowId}>
@@ -232,7 +238,9 @@ const Player = (player: State["players"][number]) => {
         </a>
       </td>
       <td safe>{player.url}</td>
-      <td>{player.log?.[0]?.score ?? 0}</td>
+      <td sse-swap={`player-${player.uuid}`} hx-swap="outerHTML">
+        {player.log?.[0]?.score}
+      </td>
       <td>
         {player.playing ? (
           <span class="text-success">Playing</span>
@@ -267,6 +275,8 @@ const Admin = ({ state }: AdminProps) => {
     <div
       id="content"
       class="epic pt-8 flex flex-col min-w-full max-w-full gap-8"
+      hx-ext="sse"
+      sse-connect="/admin/sse"
     >
       {/* Display round */}
       <div class="flex flex-col gap-8 z-10 bg-base-100 bg-opacity-90 backdrop-blur-sm p-8 rounded-2xl">
@@ -286,12 +296,12 @@ const Admin = ({ state }: AdminProps) => {
                 <th />
               </tr>
             </thead>
-            <tbody>
+            <tbody class="auto-animate">
               {state.players
-                .toSorted((a, b) => a.nick.localeCompare(b.nick))
+                .toSorted((a, b) => a.score - b.score)
                 .map((player) => (
                   // biome-ignore lint/correctness/useJsxKeyInIterable: Don't need it here
-                  <Player {...player} />
+                  <PlayerRow {...player} />
                 ))}
             </tbody>
           </table>
@@ -402,7 +412,7 @@ export const plugin = basePluginSetup()
     }
   )
   .post(
-    "/admin/start",
+    "/admin/start-game",
     ({ set, store: { state }, query: { mode } }) => {
       startGame(state, mode);
       set.redirect = "/admin";
@@ -471,4 +481,17 @@ export const plugin = basePluginSetup()
     } else {
       set.redirect = "/admin";
     }
+  })
+  .get("/admin/sse", ({ store: { state }, request }) => {
+    const stream = createSSEResponse(state, request, [
+      (state, event) => {
+        if (event.type === "player-answer") {
+          const player = state.players.find((p) => p.uuid === event.uuid);
+          return player ? [{ event: `player-${player.uuid}`, data: "" }] : [];
+        }
+        return [];
+      },
+    ]);
+
+    return stream;
   });

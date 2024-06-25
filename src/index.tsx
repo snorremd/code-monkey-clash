@@ -2,21 +2,22 @@ import staticPlugin from "@elysiajs/static";
 import { Elysia, t } from "elysia";
 
 import { htmlPlugin } from "./middleware/html/html";
-import { statePlugin } from "./middleware/state/state";
 import { plugin as adminPlugin } from "./pages/admin";
 import { plugin as homePlugin } from "./pages/home/home";
 import { notFoundPlugin } from "./pages/not-found/not-found";
 import { plugin as playerPlugin } from "./pages/player";
 import { plugin as signupPlugin } from "./pages/signup";
 import { htmxPlugin } from "./middleware/htmx/htmx";
+import { state } from "./game/state";
+import { ssePlugin } from "./middleware/sse/sse";
 
 const app = new Elysia({
   serve: {
     reusePort: true,
   },
 })
+  .state("state", state)
   .use(htmlPlugin())
-  .use(statePlugin())
   .use(htmxPlugin())
   .use(staticPlugin())
   .get("/public/htmx.min.js", () =>

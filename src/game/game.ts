@@ -2,9 +2,10 @@ import type { State } from "./state";
 import { type Question, gameQuestions, testQuestions } from "./questions";
 
 // Specify intervals in milliseconds to make it easier to work with time
+export const defaultInterval = 20000;
 const minInterval = 5000;
-const maxPositiveTrendInterval = 8000;
-const maxInterval = 15000;
+const maxInterval = 30000;
+const maxPositiveTrendInterval = 10000;
 const intervalStep = 1000;
 
 /**

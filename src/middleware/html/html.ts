@@ -16,7 +16,14 @@ export function isHTML(str: unknown): str is string {
   );
 }
 
+/**
+ * Adds an onAfterHandle hook to the app that checks if the response is HTML.
+ * If it is, it sets the content-type header to text/html and adds a doctype.
+ * We only ever render HTML to string, so we don't need to care about streaming.
+ * @returns
+ */
 export const htmlPlugin = () => {
+  console.log("htmlPlugin: htmlPlugin");
   const app = new Elysia({ name: "html" })
     .derive({ as: "global" }, () => {})
     .onAfterHandle({ as: "global" }, ({ response, set }) => {

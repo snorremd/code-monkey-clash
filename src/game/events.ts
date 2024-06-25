@@ -69,16 +69,16 @@ interface ChangeRound {
   round: number;
 }
 
-export type GameEvent =
-  | PlayerJoined
-  | PlayerLeft
-  | PlayerChangeUrl
-  | GameStarted
-  | GameStopped
-  | GamePaused
-  | GameContinued
-  | ChangeRound;
-
+/**
+ * Event sent to main thread when a player is asked a question.
+ * This contains the initial question log data, but no answer.
+ * The player worker sends a PlayerAnswer event when the player answers.
+ */
+interface PlayerQuestion {
+  type: "player-question";
+  uuid: string;
+  log: PlayerLog;
+}
 /**
  * Event sent to main thread when a player answers a question.
  * Contains the player log event with details about the answer.
@@ -99,4 +99,19 @@ interface PlayerStopped {
   uuid: string;
 }
 
-export type PlayerEvent = PlayerAnswer | PlayerStopped;
+/** Events fired by the main worker in response to game events */
+export type MainWorkerEvent =
+  | PlayerJoined
+  | PlayerLeft
+  | PlayerChangeUrl
+  | GameStarted
+  | GameStopped
+  | GamePaused
+  | GameContinued
+  | ChangeRound;
+
+/** Events fired by the player worker like when player has answered question */
+export type PlayerWorkerEvent = PlayerAnswer | PlayerQuestion | PlayerStopped;
+
+/** All game events regardless of main or player worker so UI can update accordingly */
+export type GameEvent = MainWorkerEvent | PlayerWorkerEvent;
