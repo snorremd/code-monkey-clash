@@ -142,11 +142,15 @@ export const addPlayer = (state: State, playerPayload: CreatePlayer) => {
   };
 
   state.players.push(newPlayer);
-
-  console.log("Notify state worker about new state");
   saveState(state);
 
-  console.log("Return new player UUID");
+  for (const listener of Object.values(state.uiListeners)) {
+    listener({
+      type: "player-joined",
+      ...newPlayer,
+    });
+  }
+
   return newPlayer.uuid;
 };
 

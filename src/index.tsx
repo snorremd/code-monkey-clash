@@ -9,7 +9,6 @@ import { plugin as playerPlugin } from "./pages/player";
 import { plugin as signupPlugin } from "./pages/signup";
 import { htmxPlugin } from "./middleware/htmx/htmx";
 import { state } from "./game/state";
-import { ssePlugin } from "./middleware/sse/sse";
 
 const app = new Elysia({
   serve: {

@@ -4,7 +4,7 @@ import type { GameMode, Player, PlayerLog } from "./state";
  * First event sent to player worker thread after a player joins
  * the game and the worker is created.
  */
-interface PlayerJoined extends Pick<Player, "uuid" | "url"> {
+interface PlayerJoined extends Player {
   type: "player-joined";
 }
 

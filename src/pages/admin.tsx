@@ -65,13 +65,7 @@ const Stats = ({ state }: RoundProps) => {
   );
 
   return (
-    <div
-      id="counter"
-      class="stats stats-horizontal text-2xl max-w-full"
-      hx-get="/admin/time"
-      hx-swap="outerHTML"
-      hx-target="this"
-    >
+    <div id="counter" class="stats stats-horizontal text-2xl max-w-full">
       <div class="stat place-items-center">
         <span class="stat-title">Game</span>
         <span class="stat-value font-mono">
@@ -96,7 +90,13 @@ const Stats = ({ state }: RoundProps) => {
       </div>
       <div class="stat place-items-center">
         <span class="stat-title">Total requests</span>
-        <span class="stat-value font-mono">{totalRequests}</span>
+        <span
+          class="stat-value font-mono"
+          hx-swap="innerHTML"
+          sse-swap="request-count"
+        >
+          {totalRequests}
+        </span>
       </div>
     </div>
   );
@@ -106,41 +106,45 @@ const PlayOrStop = ({ state }: RoundProps) => {
   const { status } = state;
 
   return (
-    <form class="flex flex-row gap-2" method="POST" action="">
+    <form class="flex flex-row gap-8" method="POST" action="">
       {status === "stopped" ? (
         <>
-          <button
-            type="submit"
-            formmethod="POST"
-            formaction="/admin/start-game?mode=demo"
-            class="btn btn-outline btn-warning"
-          >
-            Start Demo
-          </button>
-          <button
-            type="submit"
-            formmethod="POST"
-            formaction="/admin/start-game?mode=game"
-            class="btn btn-outline btn-success"
-          >
-            Start Game
-          </button>
-          <button
-            type="submit"
-            formmethod="POST"
-            formaction="/admin/reset-game"
-            class="btn btn-outline btn-error"
-          >
-            Reset Game
-          </button>
-          <button
-            type="submit"
-            formmethod="POST"
-            formaction="/admin/reset-state"
-            class="btn btn-outline btn-error"
-          >
-            Reset Server
-          </button>
+          <div class="flex flex-row gap-2">
+            <button
+              type="submit"
+              formmethod="POST"
+              formaction="/admin/start-game?mode=demo"
+              class="btn btn-outline btn-warning"
+            >
+              Start Demo
+            </button>
+            <button
+              type="submit"
+              formmethod="POST"
+              formaction="/admin/start-game?mode=game"
+              class="btn btn-outline btn-success"
+            >
+              Start Game
+            </button>
+          </div>
+          <div class="flex flex-row gap-2">
+            <button
+              type="submit"
+              formmethod="POST"
+              formaction="/admin/reset-game"
+              class="btn btn-outline btn-error"
+            >
+              Reset Game
+            </button>
+            <button
+              type="submit"
+              formmethod="POST"
+              formaction="/admin/reset-state"
+              class="btn btn-outline btn-error"
+            >
+              Reset Server
+            </button>
+          </div>
         </>
       ) : null}
       {status === "playing" ? (
@@ -238,8 +242,8 @@ const PlayerRow = (player: Player) => {
         </a>
       </td>
       <td safe>{player.url}</td>
-      <td sse-swap={`player-${player.uuid}`} hx-swap="outerHTML">
-        {player.log?.[0]?.score}
+      <td sse-swap={`player-score-${player.uuid}`} hx-swap="innerHTML">
+        {player.log?.[0]?.score ?? 0}
       </td>
       <td>
         {player.playing ? (
@@ -296,7 +300,11 @@ const Admin = ({ state }: AdminProps) => {
                 <th />
               </tr>
             </thead>
-            <tbody class="auto-animate">
+            <tbody
+              class="auto-animate"
+              sse-swap="player-joined"
+              hx-swap="afterbegin"
+            >
               {state.players
                 .toSorted((a, b) => a.score - b.score)
                 .map((player) => (
@@ -335,9 +343,6 @@ export const plugin = basePluginSetup()
         <AdminLoginForm fieldErrors={{}} />
       </Layout>
     );
-  })
-  .get("/admin/time", ({ store: { state } }) => {
-    return <Stats state={state} />;
   })
   .post(
     "/admin/login",
@@ -398,7 +403,7 @@ export const plugin = basePluginSetup()
     "/admin/remove",
     ({ body: { uuid }, htmx, set, store: { state } }) => {
       removePlayer(state, uuid);
-      if (!htmx.is) {
+      if (htmx.is) {
         htmx.location({ path: "/admin", target: "#main" });
       } else {
         set.redirect = "/admin";
@@ -487,7 +492,30 @@ export const plugin = basePluginSetup()
       (state, event) => {
         if (event.type === "player-answer") {
           const player = state.players.find((p) => p.uuid === event.uuid);
-          return player ? [{ event: `player-${player.uuid}`, data: "" }] : [];
+          return player
+            ? [
+                {
+                  event: `player-score-${player.uuid}`,
+                  data: `${event.log.score}`,
+                },
+                {
+                  event: "request-count",
+                  data: `${state.players.reduce(
+                    (acc, p) => acc + p.log.length,
+                    0
+                  )}`,
+                },
+              ]
+            : [];
+        }
+
+        if (event.type === "player-joined") {
+          return [
+            {
+              event: "player-joined",
+              data: `${(<PlayerRow {...event} />)}`,
+            },
+          ];
         }
         return [];
       },

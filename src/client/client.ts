@@ -9,7 +9,6 @@ htmx.onLoad(() => {
   for (const element of Array.from(
     document.querySelectorAll(".auto-animate")
   )) {
-    console.log("Auto animating element", element);
     autoAnimate(element as HTMLElement);
   }
 });
