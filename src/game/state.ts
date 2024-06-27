@@ -1,6 +1,7 @@
 import { Elysia } from "elysia";
 import type { PlayerWorker } from "./player-worker";
 import type { GameEvent } from "./events";
+import { randomColor } from "../helpers";
 
 // Setup types for the game state including player logs, workers, etc
 export type GameStatus = "playing" | "paused" | "stopped";
@@ -24,6 +25,7 @@ export interface Player {
   worker?: PlayerWorker;
   uuid: string;
   nick: string;
+  color: { class: string; hex: string };
   url: string;
   playing: boolean;
   score: number;
@@ -89,15 +91,14 @@ if (state.status === "playing") {
 
 type CreatePlayer = Pick<Player, "nick" | "url">;
 
-const newWorker = (player: Pick<Player, "uuid" | "url">) => {
+const newWorker = (player: Player) => {
   const worker = new Worker(
     new URL("./player-worker.ts", import.meta.url)
   ) as PlayerWorker;
 
   worker.postMessage({
     type: "player-joined",
-    uuid: player.uuid,
-    url: player.url,
+    ...player,
   });
 
   worker.onmessage = (event) => {
@@ -116,6 +117,8 @@ const newWorker = (player: Pick<Player, "uuid" | "url">) => {
           for (const listener of Object.values(state.uiListeners)) {
             listener(event.data);
           }
+
+          saveState(state);
         }
         break;
     }
@@ -135,6 +138,7 @@ export const addPlayer = (state: State, playerPayload: CreatePlayer) => {
   const newPlayer: Player = {
     ...playerPayload,
     uuid: crypto.randomUUID(),
+    color: randomColor(state.players.length),
     log: [],
     question_interval: 10,
     score: 0,
@@ -230,6 +234,11 @@ export const continueGame = (state: State) => {
     // we need to create a new worker for the player
     if (!player.worker) {
       player.worker = newWorker(player);
+      const { worker, ...withoutWorker } = player;
+      player.worker.postMessage({
+        type: "player-joined",
+        ...withoutWorker,
+      });
     }
     player.worker.postMessage({ type: "game-continued" });
   }

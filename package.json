@@ -23,6 +23,8 @@
     "@formkit/auto-animate": "^0.8.2",
     "@kitajs/html": "^4.1.0",
     "@kitajs/ts-html-plugin": "4.0.1",
+    "chart.js": "^4.4.3",
+    "chartjs-adapter-date-fns": "^3.0.0",
     "elysia": "^1.0.24",
     "html-escaper": "^3.0.3",
     "htmx.org": "^1.9.12",
@@ -35,7 +37,7 @@
     "@types/html-escaper": "^3.0.2",
     "bun-types": "latest",
     "concurrently": "^8.2.2",
-    "daisyui": "^4.12.2",
+    "daisyui": "^4.12.8",
     "mitata": "^0.1.11",
     "tailwindcss": "^3.4.4",
     "typescript": "^5.4.5"

@@ -9,6 +9,7 @@ import { plugin as playerPlugin } from "./pages/player";
 import { plugin as signupPlugin } from "./pages/signup";
 import { htmxPlugin } from "./middleware/htmx/htmx";
 import { state } from "./game/state";
+import { scoreboardPlugin } from "./pages/scoreboard/scoreboard";
 
 const app = new Elysia({
   serve: {
@@ -30,6 +31,7 @@ const app = new Elysia({
   )
   .use(adminPlugin)
   .use(homePlugin)
+  .use(scoreboardPlugin)
   .use(signupPlugin)
   .use(playerPlugin)
   .use(notFoundPlugin);
