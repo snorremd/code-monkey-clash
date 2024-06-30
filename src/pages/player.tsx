@@ -49,8 +49,10 @@ const PlayerStats = ({ state, player, log }: PlayerStatsProps) => {
       </div>
       <div class="stat place-items-center">
         <span class="stat-title">Answer ratio</span>
-        <span class="stat-value">
-          {Number.isNaN(log?.answerRatio ?? 0) ? "N/A" : log?.answerRatio}
+        <span class="stat-value" safe>
+          {Number.isNaN(log?.answerRatio ?? 0)
+            ? "N/A"
+            : log?.answerRatio?.toPrecision(2)}
         </span>
       </div>
     </div>
@@ -99,7 +101,10 @@ const QuestionTableRow = ({ log }: { log: PlayerLog }) => {
       <td safe>{log.question}</td>
       <td>
         {log.answer ? (
-          <span safe class={`${log.score > 0 ? "text-success" : "text-error"}`}>
+          <span
+            safe
+            class={`${log.points > 0 ? "text-success" : "text-error"}`}
+          >
             {htmlEscape(log.answer).substring(0, 500)}
           </span>
         ) : (
@@ -210,10 +215,11 @@ export const plugin = basePluginSetup()
         set.status = 404;
         return;
       }
+
       return createSSEResponse(state, request, [
         (state, event) => {
-          console.log("Event", event);
           if (event.type === "player-answer" && event.uuid === player.uuid) {
+            console.log("Event", event);
             return [
               {
                 event: "stats",

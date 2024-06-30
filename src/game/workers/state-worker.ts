@@ -6,7 +6,7 @@
  * write operation is started, thus avoiding broken JSON.
  */
 import { writeFileSync } from "node:fs";
-import type { State } from "./state";
+import type { SaveStateEvent } from "../events";
 
 // biome-ignore lint/style/noVar: Necessary for Web Workers
 declare var self: Worker;
@@ -16,8 +16,9 @@ declare var self: Worker;
  * Receives one type of event, the state update.
  * @param event The game state
  */
-self.onmessage = (event: MessageEvent<State>) => {
-  const state = event.data;
+self.onmessage = (event: MessageEvent<SaveStateEvent>) => {
+  const state = event.data.state;
+  const path = event.data.path;
   const content = JSON.stringify(state, null, 2);
-  writeFileSync("./state.json", content); // Blergh, but it works
+  writeFileSync(path, content); // Blergh, but it works
 };

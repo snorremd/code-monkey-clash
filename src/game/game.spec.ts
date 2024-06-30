@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import { adjustQuestionInterval } from "./game";
+import { adjustQuestionInterval, maxPositiveTrendInterval } from "./game";
 
 describe("game", () => {
   describe("adjustQuestionInterval", () => {
@@ -13,9 +13,9 @@ describe("game", () => {
 
     it("should not increase time between quetions above maxPositiveTrendInterval", () => {
       const scores = Array(20).fill(1);
-      const interval = 10000;
+      const interval = maxPositiveTrendInterval;
       const result = adjustQuestionInterval(interval, scores);
-      expect(result).toBe(10000);
+      expect(result).toBe(maxPositiveTrendInterval);
     });
 
     it("should increase time between questions quickly if player has a negative trend", () => {

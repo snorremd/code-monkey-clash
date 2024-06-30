@@ -1,5 +1,5 @@
 import { type ValidationError, t } from "elysia";
-import { mapValidationError } from "../helpers";
+import { mapValidationError } from "../helpers/helpers";
 import { HTMLLayout, HXLayout, HeroLayout } from "../layouts/main";
 import { basePluginSetup } from "../plugins";
 import { addPlayer } from "../game/state";
@@ -17,8 +17,9 @@ const Form = ({ fieldErrors, nick, url }: FormProps) => {
         class="rounded-2xl z-10 bg-base-100 p-8 bg-opacity-80 backdrop-blur-sm w-full max-w-md flex flex-col items-stretch gap-4"
         hx-post="/signup"
         hx-target="#main"
+        hx-target-4x="#main"
+        hx-target-5x="#main"
         hx-swap="innerHTML"
-        hx-boost
       >
         <label class="form-control w-full">
           <div class="label">
@@ -76,6 +77,7 @@ export const plugin = basePluginSetup()
   .post(
     "/signup",
     ({ body: { nick, url }, htmx, set, store: { state } }) => {
+      const Layout = htmx.is ? HXLayout : HTMLLayout;
       const fieldErrors: Record<string, string> = {};
 
       if (state.players.find((p) => p.nick === nick)) {
@@ -87,8 +89,7 @@ export const plugin = basePluginSetup()
 
       // If field errors not empty, return Form with errors
       if (Object.keys(fieldErrors).length) {
-        set.status = 400;
-        const Layout = htmx.is ? HXLayout : HTMLLayout;
+        set.status = 200;
         return (
           <Layout page="Sign Up">
             <Form fieldErrors={fieldErrors} nick={nick} url={url} />
@@ -109,6 +110,7 @@ export const plugin = basePluginSetup()
         nick: t.String({
           minLength: 3,
           maxLength: 20,
+          pattern: "^[a-zA-Z0-9-_ ]+$",
         }),
         url: t.String({
           pattern:
@@ -120,8 +122,9 @@ export const plugin = basePluginSetup()
       }),
       error: ({ code, error, htmx, set, body: { nick, url } }) => {
         const Layout = htmx.is ? HXLayout : HeroLayout;
+        console.log("Error", code, error);
         if (code === "VALIDATION") {
-          set.status = 200;
+          set.status = 400;
           const errors = mapValidationError(error as ValidationError);
           return (
             <Layout page="Sign Up">

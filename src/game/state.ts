@@ -1,6 +1,9 @@
 import { Elysia } from "elysia";
-import type { PlayerWorker } from "./player-worker";
-import type { GameEvent } from "./events";
+import type { GameEvent, PlayerWorkerEvent, SaveStateEvent } from "./events";
+import { playerColor } from "../helpers/helpers";
+
+// biome-ignore lint/complexity/useLiteralKeys: <explanation>
+const stateLocation = Bun.env["CMC_STATE_FILE"] ?? "./state.json";
 
 // Setup types for the game state including player logs, workers, etc
 export type GameStatus = "playing" | "paused" | "stopped";
@@ -8,7 +11,8 @@ export type GameMode = "demo" | "game";
 
 export interface PlayerLog {
   id: number;
-  date: string;
+  /** Date time as millisecs since epoch */
+  date: number;
   score: number;
   points: number;
   question: string;
@@ -24,12 +28,15 @@ export interface Player {
   worker?: PlayerWorker;
   uuid: string;
   nick: string;
+  color: { class: string; hex: string };
   url: string;
   playing: boolean;
   score: number;
   question_interval: number;
   log: PlayerLog[];
 }
+
+export type SerializablePlayer = Omit<Player, "worker">;
 
 export interface State {
   mode?: GameMode;
@@ -47,14 +54,18 @@ export interface State {
   uiListeners: Record<string, (e: GameEvent) => void>;
 }
 
-const stateLocation = "./state.json";
+export interface StateWorker extends Worker {
+  postMessage: (event: SaveStateEvent) => void;
+}
 
 /**
  * State worker to handle state persistence in a blocking manner.
  * This worker listens for new state updates from the main thread and then
  * writes the state to the file system in a blocking manner.
  */
-const stateWorker = new Worker(new URL("./state-worker.ts", import.meta.url));
+const stateWorker = new Worker(
+  new URL("./workers/state-worker.ts", import.meta.url)
+) as StateWorker;
 
 async function loadState() {
   return (await Bun.file(stateLocation).exists())
@@ -68,14 +79,18 @@ async function loadState() {
 }
 
 async function saveState(state: State) {
-  const serializable = {
-    ...state,
-    players: state.players.map((p) => ({
-      ...p,
-      worker: undefined,
-    })),
-    uiListeners: {},
-  } satisfies State;
+  const serializable: SaveStateEvent = {
+    type: "save-state",
+    path: stateLocation,
+    state: {
+      ...state,
+      players: state.players.map((p) => ({
+        ...p,
+        worker: undefined,
+      })),
+      uiListeners: {},
+    },
+  };
   stateWorker.postMessage(serializable);
 }
 
@@ -89,15 +104,24 @@ if (state.status === "playing") {
 
 type CreatePlayer = Pick<Player, "nick" | "url">;
 
-const newWorker = (player: Pick<Player, "uuid" | "url">) => {
+/**
+ * From the perspective of the main thread, a player worker is a worker
+ * that you can post game events to and listen for player events from.
+ */
+interface PlayerWorker extends Worker {
+  postMessage: (event: GameEvent) => void;
+  onmessage: (event: MessageEvent<PlayerWorkerEvent>) => void;
+}
+
+const newWorker = (player: Player) => {
+  player.worker = undefined;
   const worker = new Worker(
-    new URL("./player-worker.ts", import.meta.url)
+    new URL("./workers/player-worker.ts", import.meta.url)
   ) as PlayerWorker;
 
   worker.postMessage({
     type: "player-joined",
-    uuid: player.uuid,
-    url: player.url,
+    ...player,
   });
 
   worker.onmessage = (event) => {
@@ -116,6 +140,8 @@ const newWorker = (player: Pick<Player, "uuid" | "url">) => {
           for (const listener of Object.values(state.uiListeners)) {
             listener(event.data);
           }
+
+          saveState(state);
         }
         break;
     }
@@ -135,6 +161,7 @@ export const addPlayer = (state: State, playerPayload: CreatePlayer) => {
   const newPlayer: Player = {
     ...playerPayload,
     uuid: crypto.randomUUID(),
+    color: playerColor(state.players.length),
     log: [],
     question_interval: 10,
     score: 0,
@@ -230,6 +257,11 @@ export const continueGame = (state: State) => {
     // we need to create a new worker for the player
     if (!player.worker) {
       player.worker = newWorker(player);
+      const { worker, ...withoutWorker } = player;
+      player.worker.postMessage({
+        type: "player-joined",
+        ...withoutWorker,
+      });
     }
     player.worker.postMessage({ type: "game-continued" });
   }

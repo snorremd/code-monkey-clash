@@ -9,13 +9,15 @@
     "dev": "concurrently \"bun:dev:server\" \"bun:dev:client\" \"bun:dev:tailwind\"",
     "build:tailwind": "tailwindcss -i ./src/tailwind.css -o ./public/tailwind.css",
     "build:server": "bun build --target=bun ./src/index.tsx --outfile=dist/index.js",
+    "build:client": "bun build --target=bun ./src/client/client.ts --outdir ./public",
     "build": "bun run --target=bun build:server && npm run build:tailwind",
     "format:check": "biome format ./src",
     "format": "biome format ./src --write",
     "lint": "biome lint ./src",
     "check": "biome check --write ./src",
     "typecheck": "tsc --noEmit",
-    "benchmark": "bun run --target=bun tooling/benchmark.ts"
+    "benchmark": "bun run --target=bun tooling/benchmark.ts",
+    "simulate": "bun run --target=bun tooling/simulate.ts"
   },
   "dependencies": {
     "@elysiajs/static": "^1.0.3",
@@ -23,6 +25,8 @@
     "@formkit/auto-animate": "^0.8.2",
     "@kitajs/html": "^4.1.0",
     "@kitajs/ts-html-plugin": "4.0.1",
+    "chart.js": "^4.4.3",
+    "chartjs-adapter-date-fns": "^3.0.0",
     "elysia": "^1.0.24",
     "html-escaper": "^3.0.3",
     "htmx.org": "^1.9.12",
@@ -31,11 +35,12 @@
   "devDependencies": {
     "@biomejs/biome": "^1.8.1",
     "@tailwindcss/typography": "^0.5.13",
+    "@total-typescript/shoehorn": "^0.1.2",
     "@types/bun": "^1.1.5",
     "@types/html-escaper": "^3.0.2",
     "bun-types": "latest",
     "concurrently": "^8.2.2",
-    "daisyui": "^4.12.2",
+    "daisyui": "^4.12.8",
     "mitata": "^0.1.11",
     "tailwindcss": "^3.4.4",
     "typescript": "^5.4.5"

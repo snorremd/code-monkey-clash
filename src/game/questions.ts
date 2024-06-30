@@ -6,7 +6,7 @@ import {
   generateHappyNumbers,
   generateUnhappyNumbers,
   randomNumbers,
-} from "./helpers";
+} from "./helpers/game-helpers";
 
 // Make an inferred type for the question object
 // It can be any thing
@@ -14,7 +14,7 @@ import {
 export interface Question<T> {
   randomInput: () => T;
   question: (input: T) => string;
-  correctAnswer: (answer: string, input: T) => boolean;
+  answerIsCorrect: (answer: string, input: T) => boolean;
   points: number;
   hint?: string;
 }
@@ -27,7 +27,7 @@ export const uppercase: RandomWordQuestion = {
       () => Math.random() - 0.5
     )[0],
   question: (randomWord: string) => `Capitalize the word: ${randomWord}`,
-  correctAnswer: (answer: string, randomWord: string) =>
+  answerIsCorrect: (answer: string, randomWord: string) =>
     randomWord.toUpperCase() === answer,
   points: 2,
   hint: "https://en.wikipedia.org/wiki/Letter_case",
@@ -39,7 +39,7 @@ export const lowercase: RandomWordQuestion = {
       () => Math.random() - 0.5
     )[0],
   question: (randomWord: string) => `Lowercase the word: ${randomWord}`,
-  correctAnswer: (answer: string, randomWord: string) =>
+  answerIsCorrect: (answer: string, randomWord: string) =>
     randomWord.toLowerCase() === answer,
   points: 2,
   hint: "https://en.wikipedia.org/wiki/Letter_case",
@@ -52,7 +52,7 @@ export const mostCommonLetter: RandomWordQuestion = {
     )[0],
   question: (randomWord: string) =>
     `What is the most common letter in the word: ${randomWord}`,
-  correctAnswer: (answer: string, randomWord: string) => {
+  answerIsCorrect: (answer: string, randomWord: string) => {
     // Could be multiple correct answers if there are multiple letters with the same frequency
     const letters = randomWord.split("");
     const frequencies = letters.reduce((acc, letter) => {
@@ -77,7 +77,7 @@ export const vowels: RandomWordQuestion = {
       () => Math.random() - 0.5
     )[0],
   question: (randomWord) => `How many vowels are in the word: ${randomWord}`,
-  correctAnswer: (answer, randomWord) => {
+  answerIsCorrect: (answer, randomWord) => {
     const vowels = randomWord.match(/[aeiou]/gi);
     return vowels?.length.toString() === answer;
   },
@@ -92,7 +92,7 @@ export const consonants: RandomWordQuestion = {
     )[0],
   question: (randomWord) =>
     `How many consonants are in the word: ${randomWord}`,
-  correctAnswer: (answer, randomWord) => {
+  answerIsCorrect: (answer, randomWord) => {
     const consonants = randomWord.match(/[^aeiou]/gi);
     return consonants?.length.toString() === answer;
   },
@@ -113,7 +113,7 @@ export const numeronym: RandomWordQuestion = {
     ].sort(() => Math.random() - 0.5)[0],
   question: (randomWord) =>
     `What is the numerical contraction numeronym (e.g. accessibility -> a11y) for: ${randomWord}`,
-  correctAnswer: (answer, randomWord) => {
+  answerIsCorrect: (answer, randomWord) => {
     const abbreviation =
       randomWord[0] + (randomWord.length - 2) + randomWord.slice(-1);
     return abbreviation === answer;
@@ -129,7 +129,7 @@ export const binaryToDecimal: RandomWordQuestion = {
   },
   question: (binary) =>
     `What is the decimal value of the binary number: ${binary}`,
-  correctAnswer: (answer, binary) => {
+  answerIsCorrect: (answer, binary) => {
     return Number.parseInt(binary, 2).toString() === answer;
   },
   points: 2,
@@ -157,7 +157,7 @@ export const palindromes: WordListQuestion = {
     `Which of these words are a palindrome (comma separated answer): ${wordList.join(
       ", "
     )}`,
-  correctAnswer: (answer: string, wordList: string[]) => {
+  answerIsCorrect: (answer: string, wordList: string[]) => {
     const answers = answer.split(",").map((word) => word.trim());
     const palindomes = wordList.filter(
       (word) => word === word.split("").reverse().join("")
@@ -213,7 +213,7 @@ export const heterograms: WordListQuestion = {
     `Which of these words are heterograms (comma separated answer): ${wordList.join(
       ", "
     )}`,
-  correctAnswer: (answer: string, wordList: string[]) => {
+  answerIsCorrect: (answer: string, wordList: string[]) => {
     const answers = answer.split(",").map((word) => word.trim());
     const heterograms = wordList.filter(
       (word) => new Set(word).size === word.length
@@ -245,7 +245,7 @@ export const missingNumber: MissingNumberQuestion = {
       .join(", ");
     return `What number is missing from the sequence: ${question}`;
   },
-  correctAnswer: (answer: string, [_, missing]: [number[], number]) => {
+  answerIsCorrect: (answer: string, [_, missing]: [number[], number]) => {
     return answer === missing.toString();
   },
   points: 5,
@@ -260,7 +260,7 @@ export const addTwo: TwoNumberQuestion = {
     Math.floor(Math.random() * 100) + 1,
   ],
   question: ([a, b]: [number, number]) => `Calculate the sum of: + ${a} ${b}`,
-  correctAnswer: (answer: string, [a, b]: [number, number]) => {
+  answerIsCorrect: (answer: string, [a, b]: [number, number]) => {
     return answer === (a + b).toString();
   },
   points: 5,
@@ -275,7 +275,7 @@ export const subtractTwo: TwoNumberQuestion = {
   ],
   question: ([a, b]: [number, number]) =>
     `Calculate the difference (prefix polish notation) of: - ${a} ${b}`,
-  correctAnswer: (answer: string, [a, b]: [number, number]) => {
+  answerIsCorrect: (answer: string, [a, b]: [number, number]) => {
     return answer === (a - b).toString();
   },
   points: 5,
@@ -298,7 +298,7 @@ export const runLengthEncoding: RandomWordQuestion = {
     ].sort(() => Math.random() - 0.5)[0],
   question: (randomWord) =>
     `What is the run length encoding (e.g. aabbc -> a2b2c1) of: ${randomWord}`,
-  correctAnswer: (answer, randomWord) => {
+  answerIsCorrect: (answer, randomWord) => {
     // Match single characters not followed by the same character and count them as 1
     const encoded = randomWord.replace(/(.)\1*/g, (match, char) => {
       return `${char}${match.length}`;
@@ -327,7 +327,7 @@ export const morseCodeDecoder: RandomWordQuestion = {
     ),
   question: (randomMorseCode) =>
     `What is the decoded message from morse code (3 spaces = space): ${randomMorseCode}`,
-  correctAnswer: (answer, randomMorseCode) => {
+  answerIsCorrect: (answer, randomMorseCode) => {
     return answer === decodeMorse(randomMorseCode);
   },
   points: 10,
@@ -343,7 +343,7 @@ export const multiplyMultipleNumbers: MultiplyMultipleNumbersQuestion = {
     `Calculate the product (prefix polish notation) of: ${"* "
       .repeat(numbers.length - 1)
       .trim()} ${numbers.join(" ")}`,
-  correctAnswer: (answer: string, numbers: number[]) => {
+  answerIsCorrect: (answer: string, numbers: number[]) => {
     return answer === numbers.reduce((acc, num) => acc * num, 1).toString();
   },
   points: 10,
@@ -357,7 +357,7 @@ export const maximumProductOfTwoNumbers: MultiplyMultipleNumbersQuestion = {
     `What is the maximum product of two numbers from the list: ${numbers.join(
       ", "
     )}`,
-  correctAnswer: (answer: string, numbers: number[]) => {
+  answerIsCorrect: (answer: string, numbers: number[]) => {
     const sorted = numbers.sort((a, b) => b - a);
     return answer === (sorted[0] * sorted[1]).toString();
   },
@@ -387,7 +387,7 @@ export const multiplyDivideAndAdd: MultipleExpressionsQuestion = {
     );
     return `Calculate the result (prefix polish notation) of: ${replaced}`;
   },
-  correctAnswer: (answer: string, { expression, numbers }) => {
+  answerIsCorrect: (answer: string, { expression, numbers }) => {
     const replaced = expression.replace(
       /\$/g,
       () => numbers.shift()?.toString() ?? ""
@@ -430,9 +430,9 @@ export const happyNumber: HappyNumberQuestion = {
       randomNumbers,
     };
   },
-  question: ({ number: happyNumber, randomNumbers }) =>
+  question: ({ randomNumbers }) =>
     `Which of these numbers is a happy number: ${randomNumbers.join(", ")}`,
-  correctAnswer: (answer: string, { number: happyNumber }) => {
+  answerIsCorrect: (answer: string, { number: happyNumber }) => {
     return answer === happyNumber.toString();
   },
   points: 20,
@@ -469,7 +469,7 @@ export const caesarCipher: CaesarCipherQuestion = {
       sentence,
       shift
     )}`,
-  correctAnswer: (answer: string, { sentence }) => {
+  answerIsCorrect: (answer: string, { sentence }) => {
     return sentence === answer;
   },
   points: 20,
@@ -479,6 +479,9 @@ export const caesarCipher: CaesarCipherQuestion = {
 export const testQuestions = [uppercase, lowercase, vowels];
 
 export const gameQuestions = [
+  uppercase,
+  lowercase,
+  vowels,
   consonants,
   binaryToDecimal,
   mostCommonLetter,

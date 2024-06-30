@@ -15,7 +15,7 @@ export const HTMLLayout = ({ page, header, children }: LayoutProps) => {
         <script src="/public/sse.js" />
         <script src="/public/client.js" />
       </head>
-      <body class="bg-base-100">
+      <body class="bg-base-100" hx-ext="response-targets">
         <header class="navbar absolute inset-x-0 top-0 z-50 bg-base-300">
           <div class="flex-1">
             <a class="btn btn-ghost text-xl text-primary" href="/">

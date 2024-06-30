@@ -59,6 +59,11 @@ export type Htmx = Readonly<{
   triggerAfterSwap: (event: string | Record<string, unknown>) => void;
 }>;
 
+/**
+ * The Htmx plugin provides convenience properties and functions for working with htmx headers.
+ *
+ * @returns Elysia instance
+ */
 export const htmxPlugin = () => {
   const app = new Elysia({ name: "htmx" }).derive(
     { as: "global" },

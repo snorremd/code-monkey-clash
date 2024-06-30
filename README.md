@@ -55,6 +55,45 @@ bun run lint # Runs non-autofixable checks, fix them manually
 
 Biome has [multiple editor extensions](https://biomejs.dev/guides/integrate-in-editor/) to help you format and lint your code as you write it.
 
+### Benchmarking
+
+To run benchmarks, use the following command:
+
+```sh
+bun run benchmark
+```
+
+It will run benchmarks for some of the core functions and endpoints.
+Benchmarks are written using [mitata](https://github.com/evanwashere/mitata).
+
+### Running simulation of game
+
+It can be cumbersome running simulations with multiple player servers, so a convenience script is provided:
+
+```sh
+# Run simulation with default number of players
+bun run simulation
+
+# or with a specific number of players
+bun run simulation 10
+```
+
+The simulation script does the following:
+- Starts the game server on port 3000
+- Starts a configurable number of players on port 3001, 3002, ...
+- Automatically signs each player up for the game
+- Opens the game admin page in the browser
+
+There are currently three types of players under `./example-players`:
+- expert
+- intermittent-offline
+- not-all-answers
+
+The simulation script equally distributes the players among the three types.
+Feel free to contribute more player types to make the simulation more interesting.
+
+
+
 ## Technical Decisions
 
 This project is mostly done for fun and to learn new things, so I've decided to use a few technologies that I'm not very familiar with.

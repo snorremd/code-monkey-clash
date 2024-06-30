@@ -48,6 +48,10 @@ export function createSSEResponse(
   const stream = new ReadableStream({
     start(controller) {
       state.uiListeners[id] = (event) => {
+        // If client disconnects, we need to clean up the listener
+        if (request.signal.aborted) {
+          controller.close();
+        }
         for (const callback of callbacks) {
           // Go through each callback function
           const sseData = callback(state, event);
@@ -59,6 +63,7 @@ export function createSSEResponse(
       };
     },
     cancel() {
+      console.log("Cancel called for ReadableStream");
       if (state.uiListeners[id]) {
         delete state.uiListeners[id];
       }
@@ -67,7 +72,6 @@ export function createSSEResponse(
 
   // If the http client disconnects, we need to clean up the listener
   request.signal.onabort = () => {
-    console.log("Client disconnected, cleaning up");
     if (state.uiListeners[id]) {
       delete state.uiListeners[id];
     }
