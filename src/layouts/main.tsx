@@ -8,7 +8,7 @@ export const HTMLLayout = ({ page, header, children }: LayoutProps) => {
   return (
     <html lang="en" class="h-full">
       <head>
-        <title safe>{page} - Extreme Startup</title>
+        <title safe>{page} - Code Monkey Clash</title>
         <link rel="stylesheet" href="/public/tailwind.css" />
         <script src="/public/htmx.min.js" />
         <script src="/public/response-targets.js" />

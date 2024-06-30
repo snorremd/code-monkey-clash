@@ -180,7 +180,7 @@ const PlayOrStop = ({ state }: RoundProps) => {
 
 const Round = ({ state }: RoundProps) => {
   const { round, status, mode } = state;
-  const total = mode === "demo" ? 1 : gameQuestions.length / 2;
+  const total = mode === "demo" ? 1 : Math.floor(gameQuestions.length / 2);
   return (
     <div class="rounded-lg flex flex-col gap-4 justify-items-center">
       <div class="flex flex-row justify-between items-center">

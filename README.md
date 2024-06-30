@@ -1,7 +1,9 @@
 # Code Monkey Clash
 
+<img src="./public/code-monkey-clash-landing-image.webp" style="width: 50%">
+
 Code Monkey Clash is a code competition game where players compete to solve programming challenges.
-It is inspired by the [Extreme Startup](https://github.com/rchatley/extreme_startup) workshop.
+It is inspired by the <a href="https://github.com/rchatley/extreme_startup">Extreme Startup</a> workshop.
 The code is implemented using Bun, TypeScript, ElysiaJS, HTMX, and Tailwind CSS with DaisyUI.
 Feel free to use it for your own code competition or to learn about the technologies used.
 
@@ -24,6 +26,11 @@ git clone git@github.com:snorremd/code-monkey-clash.git
 docker build -t code-monkey-clash .
 docker run -p 3000:3000 code-monkey-clash
 ```
+
+## Screenshots
+
+You can see a visual overview of the game in the [SCREENSHOTS.md](./SCREENSHOTS.md) file.
+
 
 ## Development
 
@@ -139,20 +146,13 @@ The worker runs the game loop as an interval and communicates with the main thre
 No matter how much work the main thread has, the worker will run at the same interval and keep the game running smoothly.
 
 A separate worker thread is also used to persist the game state to disk.
-This way we can block the write operation to garantee atomic writes, without blocking the game loop or the server.
+This way we can block the write operation to guarantee atomic writes, without blocking the game loop or the server.
 
 ### Real-time communication with server-sent events
 
 For events and real-time communication server-sent events will be used.
 This is a simple and efficient way to push events from the server to the client without having to deal with WebSockets.
 Using HTMX extensions for SSE the client can listen for events and update the UI accordingly.
-
-### Some caveats
-
-If two async functions that modify different parts of the state runs concurrently, writes might not catch all the state.
-E.g. if function a modifies player a, and function b modifies player b, and they run concurrently, the state file might end up in a state where player b is updated but player a is not.
-This can happen because the state modification, serialization, and file write is not an atomic operation.
-In practice this should not be too much of a problem as there should be limited writes to the state file, and the state file is only used for persistence and not for real-time state updates.
 
 ## Aknowledgements
 
