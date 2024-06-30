@@ -9,31 +9,44 @@
  * checks if the answer is correct and sends the result back to the main thread.
  * The main thread then updates the game state accordingly.
  */
-import type { MainWorkerEvent, PlayerWorkerEvent } from "./events";
-import type { GameMode, GameStatus, PlayerLog } from "./state";
+import type { MainWorkerEvent, PlayerWorkerEvent } from "../events";
+import type { GameMode, GameStatus, PlayerLog } from "../state";
 import {
   adjustQuestionInterval,
   defaultInterval,
   roundToQuestion,
   type QuestionType,
-} from "./game";
+} from "../game";
+
+interface PlayerWorker extends Worker {
+  postMessage: (event: PlayerWorkerEvent) => void;
+  onmessage: (event: MessageEvent<MainWorkerEvent>) => void;
+}
 
 // biome-ignore lint/style/noVar: Necessary for Web Workers
-declare var self: Worker;
+declare var self: PlayerWorker;
+
 // Override postMessage type to only accept PlayerEvents
 declare function postMessage(
   message: PlayerWorkerEvent,
   transfer?: Transferable[]
 ): void;
 
-export interface PlayerWorker extends Worker {
-  postMessage: (event: MainWorkerEvent) => void;
-  onmessage: (event: MessageEvent<PlayerWorkerEvent>) => void;
-}
-
-interface WorkerState {
+/**
+ * Worker state keeps track of the player's game loop state.
+ * This includes the question counter, points, question interval, etc.
+ * Using this state we can start and stop the game loop, adjust question
+ * interval, and more.
+ *
+ * Some basic player info including the UUID, nick, and URL are also stored.
+ * The UUID and nick are used to identify the player when sending events to
+ * the main thread. The URL is used to send questions to the player server.
+ */
+export interface WorkerState {
   /** Required to identify player when sending events to main thread */
   uuid: string;
+  /** Player nickname, makes it easier to handle UI events without revealing UUID */
+  nick: string;
   /** Player url to be able to send questions to player server */
   url: string;
   /** Current round number */
@@ -57,8 +70,12 @@ interface WorkerState {
   timer?: Timer;
 }
 
+/**
+ * Initial worker state for the player worker.
+ */
 const workerState: WorkerState = {
   uuid: "",
+  nick: "",
   url: "",
   round: 0,
   status: "stopped",
@@ -84,6 +101,7 @@ async function askPlayerQuestion(
   workerState.counter++;
   const input = question.randomInput();
   const q = question.question(input);
+  log.question = q;
 
   try {
     const response = await fetch(`${workerState.url}?q=${q}`);
@@ -100,7 +118,9 @@ async function askPlayerQuestion(
     // If they returned a 200 response check if they answered correctly
     const answer = await response.text();
 
-    if (question.correctAnswer(answer, input)) {
+    console.log("Question", q, "Answer", answer, "Input", input);
+
+    if (question.answerIsCorrect(answer, input)) {
       workerState.correct++;
       log.answerRatio = workerState.correct / workerState.counter;
       log.points = question.points;
@@ -139,27 +159,20 @@ async function gameLoop() {
     console.log("Game loop stopped");
     return;
   }
-  console.info(`Running player loop for ${workerState.uuid}`);
 
-  // Calculate drift to subtract when calculating time to next question
-  const { lastQuestion, questionInterval } = workerState;
+  // Track when we ask the questions
   const now = new Date().getTime();
-  const drift = lastQuestion ? now - (lastQuestion + questionInterval) : 0;
-
-  console.log("Drift", drift);
-  console.log("Schedule", workerState.questionInterval - drift);
-
   workerState.lastQuestion = now;
 
-  // Spawn new question immediately based on the interval and drift
+  // Spawn new question immediately based on the interval
   workerState.timer = setTimeout(gameLoop, workerState.questionInterval);
 
   // Pick a random question based on the round and mode, ask player question, and update scores
   const randomQuestion = roundToQuestion(workerState);
 
   let log: PlayerLog = {
-    date: new Date(now).toISOString(),
-    question: randomQuestion.question(randomQuestion.randomInput()),
+    date: now,
+    question: "",
     score: workerState.scores[0] ?? 0,
     points: 0,
     answerRatio: workerState.correct / workerState.counter, // If answer is wrong
@@ -167,10 +180,10 @@ async function gameLoop() {
     id: workerState.counter,
   };
 
-  // Notify main thread that we're asking a question
-
   log = await askPlayerQuestion(randomQuestion, log);
-  workerState.scores.unshift(log.score);
+
+  // Keep track of last 20 scores
+  workerState.scores.unshift(log.score) > 20 && workerState.scores.pop();
 
   // Adjust question interval based on player performance
   workerState.questionInterval = adjustQuestionInterval(
@@ -179,44 +192,59 @@ async function gameLoop() {
   );
 
   // Notify main worker that we've got an answer (or not)
-  postMessage({ type: "player-answer", uuid: workerState.uuid, log });
+  postMessage({
+    type: "player-answer",
+    uuid: workerState.uuid,
+    nick: workerState.nick,
+    log,
+  });
 }
 
-function startGameLoop() {
-  workerState.timer = setTimeout(
-    async () => await gameLoop(),
-    workerState.questionInterval
+function startGameLoop(): Timer {
+  console.log(
+    `Starting game loop for ${workerState.nick} in ${
+      workerState.questionInterval / 1000
+    }s`
   );
+  return setTimeout(() => gameLoop(), workerState.questionInterval);
 }
 
 // Each worker
 self.onmessage = (event: MessageEvent<MainWorkerEvent>) => {
   const { type } = event.data;
+  let quit = false;
   switch (type) {
     case "player-joined":
-      playerJoined(event.data);
+      playerJoined(workerState, event.data);
       break;
     case "player-left":
-      playerLeft();
+      playerLeft(workerState);
+      quit = true;
       break;
     case "player-change-url":
-      playerChangedUrl(event.data);
+      playerChangedUrl(workerState, event.data);
       break;
     case "game-started":
-      gameStarted(event.data);
+      gameStarted(workerState, event.data, startGameLoop);
       break;
     case "game-stopped":
-      gameStopped();
+      gameStopped(workerState);
+      quit = true;
       break;
     case "game-paused":
-      gamePaused();
+      gamePaused(workerState);
       break;
     case "game-continued":
-      gameContinued();
+      gameContinued(workerState, startGameLoop);
       break;
     case "change-round":
       workerState.round = event.data.round;
       break;
+  }
+
+  if (quit) {
+    console.log("Quitting worker", workerState.nick);
+    process.exit();
   }
 };
 
@@ -225,52 +253,52 @@ self.onerror = (error) => {
   console.error(error);
 };
 
-function playerJoined(
+export function playerJoined(
+  state: WorkerState,
   event: Extract<MainWorkerEvent, { type: "player-joined" }>
 ) {
   // Handle player joined, esentially set up initial worker state
-  workerState.uuid = event.uuid;
-  workerState.url = event.url;
-
-  console.log("Player joined", workerState.uuid, workerState.url);
+  state.uuid = event.uuid;
+  state.nick = event.nick;
+  state.url = event.url;
 }
 
-function playerChangedUrl(
+export function playerChangedUrl(
+  state: WorkerState,
   event: Extract<MainWorkerEvent, { type: "player-change-url" }>
 ) {
-  // Handle player changed URL
-  workerState.url = event.url;
+  state.url = event.url;
 }
 
-function playerLeft() {
-  // Handle player left, essentially stop the game loop
+export function playerLeft(state: WorkerState) {
+  clearTimeout(state.timer);
+  state.timer = undefined;
+  state.status = "stopped";
+}
+
+export function gameStarted(
+  state: WorkerState,
+  data: Extract<MainWorkerEvent, { type: "game-started" }>,
+  fn: () => Timer
+) {
+  state.status = "playing";
+  state.mode = data.mode;
+  state.timer = fn();
+}
+
+export function gamePaused(state: WorkerState) {
+  clearTimeout(state.timer);
+  state.status = "paused";
+  state.timer = undefined;
+}
+
+export function gameContinued(state: WorkerState, fn: () => Timer) {
+  state.status = "playing";
+  state.timer = fn();
+}
+
+export function gameStopped(workerState: WorkerState) {
+  clearTimeout(workerState.timer);
+  workerState.timer = undefined;
   workerState.status = "stopped";
-  clearInterval(workerState.timer); // Clears any scheduled game loop invocations
-  process.exit(0); // Terminate the worker thread
-}
-
-function gameStarted(data: Extract<MainWorkerEvent, { type: "game-started" }>) {
-  console.log("Game started for player", workerState.uuid);
-  workerState.status = "playing";
-  workerState.mode = data.mode;
-  startGameLoop();
-}
-
-function gamePaused() {
-  console.log("Game paused for player", workerState.uuid);
-  workerState.status = "paused";
-  clearInterval(workerState.timer); // Clears any scheduled game loop invocations
-}
-
-function gameContinued() {
-  console.log("Game continued for player", workerState.uuid);
-  workerState.status = "playing";
-  startGameLoop(); // side-effect: starts the game loop which will keep running
-}
-
-function gameStopped() {
-  console.log("Game stopped for player", workerState.uuid);
-  clearInterval(workerState.timer); // Clears any scheduled game loop invocations
-  workerState.status = "stopped";
-  process.exit(0); // Terminate the worker thread
 }

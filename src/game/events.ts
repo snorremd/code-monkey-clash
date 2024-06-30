@@ -1,10 +1,10 @@
-import type { GameMode, Player, PlayerLog } from "./state";
+import type { GameMode, Player, PlayerLog, State } from "./state";
 
 /**
  * First event sent to player worker thread after a player joins
  * the game and the worker is created.
  */
-interface PlayerJoined extends Player {
+interface PlayerJoined extends Pick<Player, "uuid" | "nick" | "url"> {
   type: "player-joined";
 }
 
@@ -19,10 +19,8 @@ interface PlayerLeft extends Pick<Player, "uuid"> {
 /**
  * Update player URL, in case the player entered wrong URL initially.
  */
-interface PlayerChangeUrl {
+interface PlayerChangeUrl extends Pick<Player, "uuid" | "url"> {
   type: "player-change-url";
-  uuid: string;
-  url: string;
 }
 
 /**
@@ -74,9 +72,8 @@ interface ChangeRound {
  * This contains the initial question log data, but no answer.
  * The player worker sends a PlayerAnswer event when the player answers.
  */
-interface PlayerQuestion {
+interface PlayerQuestion extends Pick<Player, "uuid" | "nick"> {
   type: "player-question";
-  uuid: string;
   log: PlayerLog;
 }
 /**
@@ -84,9 +81,8 @@ interface PlayerQuestion {
  * Contains the player log event with details about the answer.
  * E.g. whether the answer was correct, the score, etc.
  */
-interface PlayerAnswer {
+interface PlayerAnswer extends Pick<Player, "uuid" | "nick"> {
   type: "player-answer";
-  uuid: string;
   log: PlayerLog;
 }
 
@@ -115,3 +111,9 @@ export type PlayerWorkerEvent = PlayerAnswer | PlayerQuestion | PlayerStopped;
 
 /** All game events regardless of main or player worker so UI can update accordingly */
 export type GameEvent = MainWorkerEvent | PlayerWorkerEvent;
+
+export interface SaveStateEvent {
+  type: "save-state";
+  path: string;
+  state: State;
+}

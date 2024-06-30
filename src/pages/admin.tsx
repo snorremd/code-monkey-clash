@@ -1,6 +1,6 @@
 import { type ValidationError, t } from "elysia";
 import { gameQuestions } from "../game/questions";
-import { mapValidationError } from "../helpers";
+import { mapValidationError } from "../helpers/helpers";
 import { HTMLLayout, HXLayout } from "../layouts/main";
 import { basePluginSetup } from "../plugins";
 import {

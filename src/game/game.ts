@@ -3,10 +3,10 @@ import { type Question, gameQuestions, testQuestions } from "./questions";
 
 // Specify intervals in milliseconds to make it easier to work with time
 export const defaultInterval = 10000;
-const minInterval = 5000;
-const maxInterval = 20000;
-const maxPositiveTrendInterval = 8000;
-const intervalStep = 1000;
+export const minInterval = 5000;
+export const maxInterval = 20000;
+export const maxPositiveTrendInterval = 8000;
+export const intervalStep = 1000;
 
 /**
  * Adjust player question interval based on historical performance.
@@ -75,7 +75,6 @@ export function roundToQuestion({
   mode,
 }: Pick<State, "round" | "mode">): QuestionType {
   const questions = mode === "demo" ? testQuestions : gameQuestions;
-  // Pick among questions based on round, make sliding window
   const windowEnd = round * 2 - 1;
   const windowStart = Math.max(windowEnd - 4, 0);
   const availableQuestions = questions.slice(windowStart, windowEnd);

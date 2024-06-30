@@ -1,5 +1,5 @@
 import { type ValidationError, t } from "elysia";
-import { mapValidationError } from "../helpers";
+import { mapValidationError } from "../helpers/helpers";
 import { HTMLLayout, HXLayout, HeroLayout } from "../layouts/main";
 import { basePluginSetup } from "../plugins";
 import { addPlayer } from "../game/state";
@@ -110,6 +110,7 @@ export const plugin = basePluginSetup()
         nick: t.String({
           minLength: 3,
           maxLength: 20,
+          pattern: "^[a-zA-Z0-9-_ ]+$",
         }),
         url: t.String({
           pattern:
@@ -121,6 +122,7 @@ export const plugin = basePluginSetup()
       }),
       error: ({ code, error, htmx, set, body: { nick, url } }) => {
         const Layout = htmx.is ? HXLayout : HeroLayout;
+        console.log("Error", code, error);
         if (code === "VALIDATION") {
           set.status = 400;
           const errors = mapValidationError(error as ValidationError);

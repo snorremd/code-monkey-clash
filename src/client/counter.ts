@@ -1,4 +1,4 @@
-import { diffNow, formatDuration } from "../helpers";
+import { diffNow, formatDuration } from "../helpers/helpers";
 
 /**
  * cmc-counter is a custom element that displays a live counter.

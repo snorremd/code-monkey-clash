@@ -23,7 +23,6 @@ export function isHTML(str: unknown): str is string {
  * @returns
  */
 export const htmlPlugin = () => {
-  console.log("htmlPlugin: htmlPlugin");
   const app = new Elysia({ name: "html" })
     .derive({ as: "global" }, () => {})
     .onAfterHandle({ as: "global" }, ({ response, set }) => {
