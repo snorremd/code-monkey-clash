@@ -219,7 +219,6 @@ export const plugin = basePluginSetup()
       return createSSEResponse(state, request, [
         (state, event) => {
           if (event.type === "player-answer" && event.uuid === player.uuid) {
-            console.log("Event", event);
             return [
               {
                 event: "stats",

@@ -31,7 +31,7 @@ describe("uppercase", () => {
 
   test("question", () => {
     const word = "test";
-    const question = uppercase.question("test");
+    const question = uppercase.questionWithInput("test");
     expect(question).toBe("Capitalize the word: test");
   });
 
@@ -46,6 +46,12 @@ describe("uppercase", () => {
     const result = uppercase.answerIsCorrect("test", word);
     expect(result).toBeFalse();
   });
+
+  test("match", () => {
+    const question = uppercase.questionWithInput("test");
+    const matches = uppercase.match(question);
+    expect(matches).toBeTrue();
+  });
 });
 
 describe("lowercase", () => {
@@ -56,7 +62,7 @@ describe("lowercase", () => {
 
   test("question", () => {
     const word = "test";
-    const question = lowercase.question("test");
+    const question = lowercase.questionWithInput("test");
     expect(question).toBe("Lowercase the word: test");
   });
 
@@ -80,8 +86,7 @@ describe("mostCommonLetter", () => {
   });
 
   test("question", () => {
-    const word = "test";
-    const question = mostCommonLetter.question("test");
+    const question = mostCommonLetter.questionWithInput("test");
     expect(question).toBe("What is the most common letter in the word: test");
   });
 
@@ -112,7 +117,7 @@ describe("vowels", () => {
 
   test("question", () => {
     const word = "test";
-    const question = vowels.question("test");
+    const question = vowels.questionWithInput("test");
     expect(question).toBe("How many vowels are in the word: test");
   });
 
@@ -137,7 +142,7 @@ describe("consonants", () => {
 
   test("question", () => {
     const word = "test";
-    const question = consonants.question("test");
+    const question = consonants.questionWithInput("test");
     expect(question).toBe("How many consonants are in the word: test");
   });
 
@@ -162,7 +167,7 @@ describe("palindromes", () => {
 
   test("question", () => {
     const list = ["test", "racecar", "hello"];
-    const question = palindromes.question(list);
+    const question = palindromes.questionWithInput(list);
     expect(question).toBe(
       "Which of these words are a palindrome (comma separated answer): test, racecar, hello"
     );
@@ -201,7 +206,7 @@ describe("heterograms", () => {
 
   test("question", () => {
     const list = ["test", "racecar", "hello"];
-    const question = heterograms.question(list);
+    const question = heterograms.questionWithInput(list);
     expect(question).toBe(
       "Which of these words are heterograms (comma separated answer): test, racecar, hello"
     );
@@ -229,7 +234,7 @@ describe("addTwo", () => {
 
   test("question", () => {
     const number = 2;
-    const question = addTwo.question([1, 2]);
+    const question = addTwo.questionWithInput([1, 2]);
     expect(question).toBe("Calculate the sum of: + 1 2");
   });
 
@@ -253,7 +258,7 @@ describe("subtractTwo", () => {
 
   test("question", () => {
     const number = 2;
-    const question = subtractTwo.question([1, 2]);
+    const question = subtractTwo.questionWithInput([1, 2]);
     expect(question).toBe(
       "Calculate the difference (prefix polish notation) of: - 1 2"
     );
@@ -278,7 +283,7 @@ describe("multiplyMultipleNumbers", () => {
 
   test("question", () => {
     const numbers = [2, 3, 4];
-    const question = multiplyMultipleNumbers.question(numbers);
+    const question = multiplyMultipleNumbers.questionWithInput(numbers);
     expect(question).toBe(
       "Calculate the product (prefix polish notation) of: * * 2 3 4"
     );
@@ -302,7 +307,7 @@ describe("multiplyDivideAndAdd", () => {
   });
 
   test("question", () => {
-    const question = multiplyDivideAndAdd.question({
+    const question = multiplyDivideAndAdd.questionWithInput({
       expression: "* + $ $ - $ $",
       numbers: [1, 2, 3, 4],
     });
@@ -339,12 +344,12 @@ describe("caesarCipher", () => {
   test("question", () => {
     const sentence = "Programming: where 'It works on my machine' is enough.";
     const shift = 3;
-    const question = caesarCipher.question({
+    const question = caesarCipher.questionWithInput({
       shift,
       sentence,
     });
     expect(question).toBe(
-      `Decode sentence with a caesar cipher shift of 3, preserve casing and punctuation: ${encodeCaesarCipher(
+      `Decode caesar-encoded sentence (preserve casing and punctuation): shift 3 sentence ${encodeCaesarCipher(
         sentence,
         shift
       )}`
@@ -376,7 +381,7 @@ describe("missingNumber", () => {
 
   test("question", () => {
     const list = [[1, 2, 3, 5], 4] as [number[], number];
-    const question = missingNumber.question(list);
+    const question = missingNumber.questionWithInput(list);
     expect(question).toBe(
       "What number is missing from the sequence: 1, 2, 3, 5"
     );
@@ -391,6 +396,19 @@ describe("missingNumber", () => {
     const result = missingNumber.answerIsCorrect("5", [[1, 2, 3, 5], 4]);
     expect(result).toBeFalse();
   });
+
+  test("solve", () => {
+    const answer = missingNumber.solve(
+      "What number is missing from the sequence: 1, 2, 3, 5"
+    );
+    expect(answer).toBe("4");
+
+    const answer2 = missingNumber.solve(
+      "What number is missing from the sequence: 1, 3, 4, 5"
+    );
+
+    expect(answer2).toBe("2");
+  });
 });
 
 describe("maximumProductOfTwoNumbers", () => {
@@ -401,7 +419,7 @@ describe("maximumProductOfTwoNumbers", () => {
 
   test("question", () => {
     const list = [1, 2, 3, 4, 5];
-    const question = maximumProductOfTwoNumbers.question(list);
+    const question = maximumProductOfTwoNumbers.questionWithInput(list);
     expect(question).toBe(
       "What is the maximum product of two numbers from the list: 1, 2, 3, 4, 5"
     );
@@ -440,7 +458,7 @@ describe("numeronym", () => {
 
   test("question", () => {
     const word = "accessibility";
-    const question = numeronym.question(word);
+    const question = numeronym.questionWithInput(word);
     expect(question).toBe(
       "What is the numerical contraction numeronym (e.g. accessibility -> a11y) for: accessibility"
     );
@@ -465,7 +483,7 @@ describe("runLengthEncoding", () => {
 
   test("question", () => {
     const word = "aaabcc";
-    const question = runLengthEncoding.question(word);
+    const question = runLengthEncoding.questionWithInput(word);
     expect(question).toBe(
       "What is the run length encoding (e.g. aabbc -> a2b2c1) of: aaabcc"
     );
@@ -490,7 +508,7 @@ describe("binaryToDecimal", () => {
 
   test("question", () => {
     const number = "101";
-    const question = binaryToDecimal.question(number);
+    const question = binaryToDecimal.questionWithInput(number);
     expect(question).toBe(
       "What is the decimal value of the binary number: 101"
     );
@@ -525,7 +543,7 @@ describe("morseCodeDecoder", () => {
 
   test("question", () => {
     const sentence = ".... . .-.. .-.. ---";
-    const question = morseCodeDecoder.question(sentence);
+    const question = morseCodeDecoder.questionWithInput(sentence);
     expect(question).toBe(
       "What is the decoded message from morse code (3 spaces = space): .... . .-.. .-.. ---"
     );
@@ -559,7 +577,7 @@ describe("happyNumber", () => {
   test("question", () => {
     const number = 19;
     const randomNumbers = [1, 2, 3, number, 4, 5];
-    const question = happyNumber.question({
+    const question = happyNumber.questionWithInput({
       number,
       randomNumbers,
     });

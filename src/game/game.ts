@@ -2,10 +2,10 @@ import type { State } from "./state";
 import { type Question, gameQuestions, testQuestions } from "./questions";
 
 // Specify intervals in milliseconds to make it easier to work with time
-export const defaultInterval = 10000;
-export const minInterval = 5000;
-export const maxInterval = 20000;
-export const maxPositiveTrendInterval = 8000;
+export const defaultInterval = 5000;
+export const minInterval = 2000;
+export const maxInterval = 10000;
+export const maxPositiveTrendInterval = 4000;
 export const intervalStep = 1000;
 
 /**
@@ -19,8 +19,8 @@ export const intervalStep = 1000;
  * @returns
  */
 export function adjustQuestionInterval(interval: number, scores: number[]) {
-  // Calculate average score last 15 questions
-  const lastScores = scores.slice(0, 20);
+  // Calculate average score last 10 questions
+  const lastScores = scores.slice(0, 10);
 
   if (lastScores.length === 0) {
     return interval;
@@ -28,6 +28,8 @@ export function adjustQuestionInterval(interval: number, scores: number[]) {
 
   const average =
     lastScores.reduce((acc, score) => acc + score, 0) / lastScores.length;
+
+  console.log("Score average:", average, "Interval:", interval);
 
   if (average > 0.75) {
     // Player has a very positive trend so start reducing question interval

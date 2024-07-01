@@ -12,6 +12,8 @@ import {
   continueGame,
   resetGame,
   type Player,
+  nextRound,
+  previousRound,
 } from "../game/state";
 import { createSSEResponse } from "../middleware/sse/sse";
 
@@ -188,7 +190,7 @@ const Round = ({ state }: RoundProps) => {
           <PlayOrStop state={state} />
         </div>
         <p class="text-center text-2xl">
-          Round {status === "stopped" ? 0 : round + 1}
+          Round {status === "stopped" ? 0 : round}
           &nbsp;of&nbsp;
           {total}
         </p>
@@ -218,7 +220,7 @@ const Round = ({ state }: RoundProps) => {
       </div>
       <progress
         class="progress max-w-full progress-primary"
-        value={status === "stopped" ? 0 : round + 1}
+        value={status === "stopped" ? 0 : round}
         max={state.mode === "demo" ? 1 : total}
       />
     </div>
@@ -470,7 +472,7 @@ export const plugin = basePluginSetup()
     }
   })
   .post("/admin/next-round", ({ htmx, set, store: { state } }) => {
-    state.round += 1;
+    nextRound(state);
 
     if (htmx.is) {
       htmx.location({ path: "/admin", target: "#main" });
@@ -479,7 +481,7 @@ export const plugin = basePluginSetup()
     }
   })
   .post("/admin/previous-round", ({ htmx, set, store: { state } }) => {
-    state.round -= 1;
+    previousRound(state);
 
     if (htmx.is) {
       htmx.location({ path: "/admin", target: "#main" });

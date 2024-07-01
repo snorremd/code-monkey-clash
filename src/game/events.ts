@@ -29,6 +29,7 @@ interface PlayerChangeUrl extends Pick<Player, "uuid" | "url"> {
 interface GameStarted {
   type: "game-started";
   mode: GameMode;
+  round: number;
 }
 
 /**

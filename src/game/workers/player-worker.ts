@@ -100,7 +100,7 @@ async function askPlayerQuestion(
 ): Promise<PlayerLog> {
   workerState.counter++;
   const input = question.randomInput();
-  const q = question.question(input);
+  const q = question.questionWithInput(input);
   log.question = q;
 
   try {
@@ -130,7 +130,7 @@ async function askPlayerQuestion(
       log.answer = answer;
     } else {
       log.points = -question.points; // Penalize player for wrong answer
-      log.score = (workerState.scores[0] ?? 0) - 5;
+      log.score = (workerState.scores[0] ?? 0) - Math.ceil(question.points / 3);
       log.statusCode = response.status;
       log.answer = answer;
     }
@@ -183,6 +183,8 @@ async function gameLoop() {
   log = await askPlayerQuestion(randomQuestion, log);
 
   // Keep track of last 20 scores
+  // Insert new score into the front of the array and remove the last score
+
   workerState.scores.unshift(log.score) > 20 && workerState.scores.pop();
 
   // Adjust question interval based on player performance
@@ -283,6 +285,7 @@ export function gameStarted(
 ) {
   state.status = "playing";
   state.mode = data.mode;
+  state.round = data.round;
   state.timer = fn();
 }
 
