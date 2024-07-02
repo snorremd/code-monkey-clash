@@ -17,8 +17,8 @@ declare var self: Worker;
  * @param event The game state
  */
 self.onmessage = (event: MessageEvent<SaveStateEvent>) => {
-  const state = event.data.state;
-  const path = event.data.path;
-  const content = JSON.stringify(state, null, 2);
-  writeFileSync(path, content); // Blergh, but it works
+	const state = event.data.state;
+	const path = event.data.path;
+	const content = JSON.stringify(state, null, 2);
+	writeFileSync(path, content); // Blergh, but it works
 };

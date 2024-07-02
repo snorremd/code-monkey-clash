@@ -5,7 +5,7 @@ import type { GameMode, Player, PlayerLog, State } from "./state";
  * the game and the worker is created.
  */
 interface PlayerJoined extends Pick<Player, "uuid" | "nick" | "url"> {
-  type: "player-joined";
+	type: "player-joined";
 }
 
 /**
@@ -13,23 +13,23 @@ interface PlayerJoined extends Pick<Player, "uuid" | "nick" | "url"> {
  * At this point the worker thread should be terminated.
  */
 interface PlayerLeft extends Pick<Player, "uuid"> {
-  type: "player-left";
+	type: "player-left";
 }
 
 /**
  * Update player URL, in case the player entered wrong URL initially.
  */
 interface PlayerChangeUrl extends Pick<Player, "uuid" | "url"> {
-  type: "player-change-url";
+	type: "player-change-url";
 }
 
 /**
  * Event sent to player worker thread when the game starts.
  */
 interface GameStarted {
-  type: "game-started";
-  mode: GameMode;
-  round: number;
+	type: "game-started";
+	mode: GameMode;
+	round: number;
 }
 
 /**
@@ -38,7 +38,7 @@ interface GameStarted {
  * The worker thread should be terminated after this event.
  */
 interface GameStopped {
-  type: "game-stopped";
+	type: "game-stopped";
 }
 
 /**
@@ -47,7 +47,7 @@ interface GameStopped {
  * Should not terminate the worker thread.
  */
 interface GamePaused {
-  type: "game-paused";
+	type: "game-paused";
 }
 
 /**
@@ -56,7 +56,7 @@ interface GamePaused {
  * Should resume the game loop.
  */
 interface GameContinued {
-  type: "game-continued";
+	type: "game-continued";
 }
 
 /**
@@ -64,8 +64,8 @@ interface GameContinued {
  * This allows us to go to next, previous or any other round.
  */
 interface ChangeRound {
-  type: "change-round";
-  round: number;
+	type: "change-round";
+	round: number;
 }
 
 /**
@@ -74,8 +74,8 @@ interface ChangeRound {
  * The player worker sends a PlayerAnswer event when the player answers.
  */
 interface PlayerQuestion extends Pick<Player, "uuid" | "nick"> {
-  type: "player-question";
-  log: PlayerLog;
+	type: "player-question";
+	log: PlayerLog;
 }
 /**
  * Event sent to main thread when a player answers a question.
@@ -83,8 +83,8 @@ interface PlayerQuestion extends Pick<Player, "uuid" | "nick"> {
  * E.g. whether the answer was correct, the score, etc.
  */
 interface PlayerAnswer extends Pick<Player, "uuid" | "nick"> {
-  type: "player-answer";
-  log: PlayerLog;
+	type: "player-answer";
+	log: PlayerLog;
 }
 
 /**
@@ -92,20 +92,20 @@ interface PlayerAnswer extends Pick<Player, "uuid" | "nick"> {
  * response to the game stopping or the player leaving.
  */
 interface PlayerStopped {
-  type: "player-stopped";
-  uuid: string;
+	type: "player-stopped";
+	uuid: string;
 }
 
 /** Events fired by the main worker in response to game events */
 export type MainWorkerEvent =
-  | PlayerJoined
-  | PlayerLeft
-  | PlayerChangeUrl
-  | GameStarted
-  | GameStopped
-  | GamePaused
-  | GameContinued
-  | ChangeRound;
+	| PlayerJoined
+	| PlayerLeft
+	| PlayerChangeUrl
+	| GameStarted
+	| GameStopped
+	| GamePaused
+	| GameContinued
+	| ChangeRound;
 
 /** Events fired by the player worker like when player has answered question */
 export type PlayerWorkerEvent = PlayerAnswer | PlayerQuestion | PlayerStopped;
@@ -114,7 +114,7 @@ export type PlayerWorkerEvent = PlayerAnswer | PlayerQuestion | PlayerStopped;
 export type GameEvent = MainWorkerEvent | PlayerWorkerEvent;
 
 export interface SaveStateEvent {
-  type: "save-state";
-  path: string;
-  state: State;
+	type: "save-state";
+	path: string;
+	state: State;
 }

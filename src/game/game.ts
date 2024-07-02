@@ -19,26 +19,26 @@ export const intervalStep = 100;
  * @returns the new interval between questions
  */
 export function adjustIntervalLinear(interval: number, points: number) {
-  // Player answered correctly, increase interval
-  if (points > 0) {
-    return Math.max(interval - intervalStep, minInterval);
-  }
+	// Player answered correctly, increase interval
+	if (points > 0) {
+		return Math.max(interval - intervalStep, minInterval);
+	}
 
-  // Player answered incorrectly, decrease interval
-  if (points < 0) {
-    return Math.min(interval + intervalStep, maxInterval);
-  }
+	// Player answered incorrectly, decrease interval
+	if (points < 0) {
+		return Math.min(interval + intervalStep, maxInterval);
+	}
 
-  // Player answered with no points, keep interval the same
-  return interval;
+	// Player answered with no points, keep interval the same
+	return interval;
 }
 
 type QuestionInput =
-  | string
-  | number
-  | number[]
-  | [number, number]
-  | [number[], number]; // Adjust based on actual types
+	| string
+	| number
+	| number[]
+	| [number, number]
+	| [number[], number]; // Adjust based on actual types
 
 export type QuestionType = Question<QuestionInput>;
 
@@ -60,14 +60,14 @@ export type QuestionType = Question<QuestionInput>;
  * ...
  */
 export function roundToQuestion({
-  round,
-  mode,
+	round,
+	mode,
 }: Pick<State, "round" | "mode">): QuestionType {
-  const questions = mode === "demo" ? testQuestions : gameQuestions;
-  const windowEnd = round * 2 - 1;
-  const windowStart = Math.max(windowEnd - 4, 0);
-  const availableQuestions = questions.slice(windowStart, windowEnd);
-  return availableQuestions[
-    Math.floor(Math.random() * availableQuestions.length)
-  ] as QuestionType; // TODO: Type casting necessary as generic Question stuff is not quite inferrable
+	const questions = mode === "demo" ? testQuestions : gameQuestions;
+	const windowEnd = round * 2 - 1;
+	const windowStart = Math.max(windowEnd - 4, 0);
+	const availableQuestions = questions.slice(windowStart, windowEnd);
+	return availableQuestions[
+		Math.floor(Math.random() * availableQuestions.length)
+	] as QuestionType; // TODO: Type casting necessary as generic Question stuff is not quite inferrable
 }

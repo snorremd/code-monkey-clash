@@ -6,12 +6,12 @@ const positiveTrend = Array(200).fill(1);
 const negativeTrend = Array(200).fill(-1);
 
 group("adjustQuestionInterval", () => {
-  bench("positive scores", () => {
-    adjustQuestionInterval(15, positiveTrend);
-  });
-  bench("negative scores", () => {
-    adjustQuestionInterval(15, negativeTrend);
-  });
+	bench("positive scores", () => {
+		adjustQuestionInterval(15, positiveTrend);
+	});
+	bench("negative scores", () => {
+		adjustQuestionInterval(15, negativeTrend);
+	});
 });
 
 await run();
