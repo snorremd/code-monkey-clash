@@ -1,7 +1,7 @@
 #################################################
 # Image to serve as the base for the other images
 FROM oven/bun:1 AS base
-WORKDIR /usr/src/app
+WORKDIR /app
 
 
 ############################################################
@@ -34,12 +34,12 @@ RUN bun build:tailwind
 FROM base AS release
 
 ENV CMC_SERVER_PORT=3000
-ENV CMC_STATE_FILE=state.json
+ENV CMC_STATE_FILE=/app/state/state.json
 
 COPY . .
 COPY --from=install /temp/prod/node_modules node_modules
-COPY --from=prerelease /usr/src/app/public/tailwind.css public/tailwind.css
-COPY --from=prerelease /usr/src/app/public/client.js public/client.js
+COPY --from=prerelease /app/public/tailwind.css public/tailwind.css
+COPY --from=prerelease /app/public/client.js public/client.js
 
 # run the app
 USER bun

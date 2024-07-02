@@ -22,10 +22,36 @@ bun run dev
 You can also run the server with Docker:
 
 ```sh
-git clone git@github.com:snorremd/code-monkey-clash.git
-docker build -t code-monkey-clash .
-docker run -p 3000:3000 code-monkey-clash
+docker pull ghcr.io/snorremd/code-monkey-clash:latest
+# Without volume mapping, state is lost when container is removed
+docker run -p 3000:3000 -d -n cmc ghcr.io/snorremd/code-monkey-clash:latest
+
+# With volume mapping, state is persisted
+docker run -p 3000:3000 -v ./state:/app/state -d -n cmc ghcr.io/snorremd/code-monkey-clash:latest
 ```
+
+> [!NOTE]  
+> When signing up a player, their server URL needs to be acessible from within the container.
+> If you are running a player server on localhost, you can use `host.docker.internal` as the hostname in the player URL.
+
+### Running competition with remote players
+
+If you want to run a competition with players on different networks things get a bit more complicated.
+You can expose the game and player servers on the Internet via reverse tunneling.
+Each player then needs to set up a reverse tunnel to their server so that the game server can reach it.
+I recommend using [cloudflared](https://developers.cloudflare.com/pages/how-to/preview-with-cloudflare-tunnel/) for this purpose.
+It allows you to expose your local server to the Internet with a simple command.
+
+```
+# Expose game server
+cloudflared tunnel --url http://localhost:3000
+```
+
+> [!WARNING]  
+> [Ngrok](https://ngrok.com/) is another popular tool for reverse tunneling, but it is blocked by some antivirus software.
+
+Another option would be to set up a virtual private network and have all players connect to it.
+This is more secure, but less convenient if the network was not already set up for other purposes.
 
 ## Screenshots
 
