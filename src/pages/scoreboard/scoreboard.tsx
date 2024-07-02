@@ -92,7 +92,9 @@ export const scoreboardPlugin = basePluginSetup()
 				</div>
 				<script>
 					{htmx.is
-						? `htmx.onLoad(() => renderChart(${JSON.stringify(datasets)}))`
+						? `htmx.on("htmx:afterSettle", () => renderChart(${JSON.stringify(
+								datasets,
+							)}))`
 						: `renderChart(${JSON.stringify(datasets)})`}
 				</script>
 			</Layout>
