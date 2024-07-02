@@ -1,9 +1,13 @@
 import { Elysia } from "elysia";
 import type { GameEvent, PlayerWorkerEvent, SaveStateEvent } from "./events";
 import { playerColor } from "../helpers/helpers";
+import { gameQuestions } from "./questions";
 
 // biome-ignore lint/complexity/useLiteralKeys: <explanation>
 const stateLocation = Bun.env["CMC_STATE_FILE"] ?? "./state.json";
+
+// Max possible rounds given number of questions
+const maxRounds = Math.floor(gameQuestions.length / 2);
 
 // Setup types for the game state including player logs, workers, etc
 export type GameStatus = "playing" | "paused" | "stopped";
@@ -202,6 +206,7 @@ export const removePlayer = (state: State, uuid: string) => {
 export const startGame = (state: State, mode: State["mode"]) => {
   state.status = "playing";
   state.mode = mode;
+  state.round = 1;
   state.gameStartedAt = new Date().toISOString();
   state.roundStartedAt = new Date().toISOString();
 
@@ -211,6 +216,7 @@ export const startGame = (state: State, mode: State["mode"]) => {
     player.worker?.postMessage({
       type: "game-started",
       mode: mode ?? "demo",
+      round: state.round,
     });
   }
   saveState(state);
@@ -267,6 +273,30 @@ export const continueGame = (state: State) => {
   }
 
   saveState(state);
+};
+
+export const nextRound = (state: State) => {
+  if (state.round < maxRounds) {
+    state.round += 1;
+    state.roundStartedAt = new Date().toISOString();
+    for (const player of state.players) {
+      player.worker?.postMessage({ type: "change-round", round: state.round });
+    }
+
+    saveState(state);
+  }
+};
+
+export const previousRound = (state: State) => {
+  if (state.round > 1) {
+    state.round -= 1;
+    state.roundStartedAt = new Date().toISOString();
+    for (const player of state.players) {
+      player.worker?.postMessage({ type: "change-round", round: state.round });
+    }
+
+    saveState(state);
+  }
 };
 
 export const plugin = new Elysia().state("state", state as State);

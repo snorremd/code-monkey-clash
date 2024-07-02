@@ -1,6 +1,11 @@
 import autoAnimate from "@formkit/auto-animate";
 import * as htmx from "htmx.org";
-import { Chart, registerables, type ChartConfiguration } from "chart.js";
+import {
+  Chart,
+  registerables,
+  type ChartConfiguration,
+  type Point,
+} from "chart.js";
 import "chartjs-adapter-date-fns";
 import { CmcCounter } from "./counter";
 
@@ -47,19 +52,19 @@ function sortScoreboard() {
 
 declare global {
   interface Window {
-    renderChart(datasets: ChartConfiguration["data"]["datasets"]): void;
+    renderChart(datasets: ChartConfiguration<"line">["data"]["datasets"]): void;
   }
 }
 
-let chart: Chart;
+let chart: Chart<"line">;
 
-function renderChart(datasets: ChartConfiguration["data"]["datasets"]) {
+function renderChart(datasets: ChartConfiguration<"line">["data"]["datasets"]) {
   console.log("Rendering chart with datasets", datasets);
 
   const ctx = document.getElementById("score-board-chart") as HTMLCanvasElement;
 
   if (ctx) {
-    chart = new Chart(ctx, {
+    chart = new Chart<"line">(ctx, {
       type: "line",
       data: {
         datasets: datasets,
@@ -117,6 +122,21 @@ function renderChart(datasets: ChartConfiguration["data"]["datasets"]) {
         },
       },
     });
+
+    // Every minute clear out old data
+    setInterval(() => {
+      const now = new Date();
+      const fiveMinutesAgo = now.getTime() - 5 * 60 * 1000;
+
+      for (const dataset of chart.data.datasets) {
+        dataset.data = dataset.data.filter((point) => {
+          const x = (point as Point).x;
+          console.log("X", x);
+          return x > fiveMinutesAgo;
+        });
+      }
+      chart.update();
+    }, 60 * 1000);
   }
 }
 
