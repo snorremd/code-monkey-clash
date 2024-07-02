@@ -1,8 +1,8 @@
 import { type ValidationError, t } from "elysia";
+import { addPlayer } from "../game/state";
 import { mapValidationError } from "../helpers/helpers";
 import { HTMLLayout, HXLayout, HeroLayout } from "../layouts/main";
 import { basePluginSetup } from "../plugins";
-import { addPlayer } from "../game/state";
 
 interface FormProps {
 	url?: string;

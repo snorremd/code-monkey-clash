@@ -1,11 +1,11 @@
+import { describe, expect, it } from "bun:test";
 import {
 	type PartialDeepObject,
 	fromPartial,
 } from "@total-typescript/shoehorn";
-import { expect, describe, it } from "bun:test";
 import { nanoid } from "nanoid";
-import type { State, StateWorker } from "../state";
 import type { SaveStateEvent } from "../events";
+import type { State, StateWorker } from "../state";
 
 describe("state-worker", () => {
 	it("should write state to file system", () => {

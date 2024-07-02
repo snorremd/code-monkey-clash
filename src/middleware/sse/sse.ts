@@ -6,8 +6,8 @@
  */
 
 import { nanoid } from "nanoid";
-import type { State } from "../../game/state";
 import type { GameEvent } from "../../game/events";
+import type { State } from "../../game/state";
 
 /** Data to send to SSE clients (i.e. browsers) */
 interface SSECallbackResponse {

@@ -1,5 +1,5 @@
-import type { State } from "./state";
 import { type Question, gameQuestions, testQuestions } from "./questions";
+import type { State } from "./state";
 
 // Specify intervals in milliseconds to make it easier to work with time
 

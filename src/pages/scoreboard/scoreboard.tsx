@@ -1,9 +1,9 @@
-import { HTMLLayout, HXLayout } from "../../layouts/main";
-import { basePluginSetup } from "../../plugins";
-import type { Player } from "../../game/state";
-import { createSSEResponse } from "../../middleware/sse/sse";
 import type { ChartConfiguration } from "chart.js";
+import type { Player } from "../../game/state";
 import { splitArrayAt } from "../../helpers/helpers";
+import { HTMLLayout, HXLayout } from "../../layouts/main";
+import { createSSEResponse } from "../../middleware/sse/sse";
+import { basePluginSetup } from "../../plugins";
 
 const PlayerRow = ({ player }: { player: Player }) => {
 	return (
