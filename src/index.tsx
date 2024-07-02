@@ -12,32 +12,32 @@ import { state } from "./game/state";
 import { scoreboardPlugin } from "./pages/scoreboard/scoreboard";
 
 const app = new Elysia({
-  serve: {
-    reusePort: true,
-  },
+	serve: {
+		reusePort: true,
+	},
 })
-  .state("state", state)
-  .use(htmlPlugin())
-  .use(htmxPlugin())
-  .use(staticPlugin())
-  .get("/public/htmx.min.js", () =>
-    Bun.file("node_modules/htmx.org/dist/htmx.min.js")
-  )
-  .get("/public/response-targets.js", () =>
-    Bun.file("node_modules/htmx.org/dist/ext/response-targets.js")
-  )
-  .get("/public/sse.js", () =>
-    Bun.file("node_modules/htmx.org/dist/ext/sse.js")
-  )
-  .use(adminPlugin)
-  .use(homePlugin)
-  .use(scoreboardPlugin)
-  .use(signupPlugin)
-  .use(playerPlugin)
-  .use(notFoundPlugin);
+	.state("state", state)
+	.use(htmlPlugin())
+	.use(htmxPlugin())
+	.use(staticPlugin())
+	.get("/public/htmx.min.js", () =>
+		Bun.file("node_modules/htmx.org/dist/htmx.min.js"),
+	)
+	.get("/public/response-targets.js", () =>
+		Bun.file("node_modules/htmx.org/dist/ext/response-targets.js"),
+	)
+	.get("/public/sse.js", () =>
+		Bun.file("node_modules/htmx.org/dist/ext/sse.js"),
+	)
+	.use(adminPlugin)
+	.use(homePlugin)
+	.use(scoreboardPlugin)
+	.use(signupPlugin)
+	.use(playerPlugin)
+	.use(notFoundPlugin);
 
 app.listen(3000);
 
 console.info(
-  `🦊 Elysia is running at ${app.server?.hostname}:${app.server?.port}`
+	`🦊 Elysia is running at ${app.server?.hostname}:${app.server?.port}`,
 );

@@ -1,46 +1,47 @@
-FROM oven/bun as tailwind
+#################################################
+# Image to serve as the base for the other images
+FROM oven/bun:1 AS base
+WORKDIR /usr/src/app
 
-WORKDIR /app
 
-COPY package.json .
-COPY bun.lockb .
+############################################################
+# Image to install dependencies to make use of layer caching
+FROM base AS install
 
-RUN bun install
+# Install dev dependencies
+RUN mkdir -p /temp/dev
+COPY package.json bun.lockb /temp/dev/
+RUN cd /temp/dev && bun install --frozen-lockfile
 
-COPY src src
-COPY tsconfig.json tailwind.config.js ./
-COPY public public
+# install with --production (exclude devDependencies)
+RUN mkdir -p /temp/prod
+COPY package.json bun.lockb /temp/prod/
+RUN cd /temp/prod && bun install --frozen-lockfile --production
 
+######################################################
+# Image to build the client script and tailwind styles
+FROM base as prerelease
+
+COPY --from=install /temp/dev/node_modules node_modules
+COPY . .
+
+RUN bun build:client
 RUN bun build:tailwind
 
-FROM oven/bun as build
+#########################################################
+# Final application image to run Code Monkey Clash server
 
-WORKDIR /app
+FROM base AS release
 
-COPY package.json .
-COPY bun.lockb .
+ENV CMC_SERVER_PORT=3000
+ENV CMC_STATE_FILE=state.json
 
-RUN bun install
+COPY . .
+COPY --from=install /temp/prod/node_modules node_modules
+COPY --from=prerelease /usr/src/app/public/tailwind.css public/tailwind.css
+COPY --from=prerelease /usr/src/app/public/client.js public/client.js
 
-COPY src src
-COPY tsconfig.json ./
-COPY public public
-
-RUN bun run build:server
-
-FROM oven/bun
-
-WORKDIR /app
-
-COPY package.json .
-COPY bun.lockb .
-
-RUN bun install --production
-
-COPY --from=build /app/dist /app/dist
-COPY --from=tailwind /app/public /app/public
-
-ENV NODE_ENV production
-CMD ["bun", "dist/index.js"]
-
-EXPOSE 3000
+# run the app
+USER bun
+EXPOSE 3000/tcp
+ENTRYPOINT [ "bun", "run", "src/index.tsx" ]

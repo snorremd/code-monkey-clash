@@ -11,19 +11,19 @@ import type { GameEvent } from "../../game/events";
 
 /** Data to send to SSE clients (i.e. browsers) */
 interface SSECallbackResponse {
-  event: string;
-  data: string;
+	event: string;
+	data: string;
 }
 
 /** Given state and event, return a HTML string or  */
 type SSECallback = (state: State, event: GameEvent) => SSECallbackResponse[];
 
 export class SSEResponse {
-  public callbacks: SSECallback[];
+	public callbacks: SSECallback[];
 
-  constructor(callbacks: SSECallback[]) {
-    this.callbacks = callbacks;
-  }
+	constructor(callbacks: SSECallback[]) {
+		this.callbacks = callbacks;
+	}
 }
 
 /**
@@ -40,42 +40,42 @@ export class SSEResponse {
  * @returns
  */
 export function createSSEResponse(
-  state: State,
-  request: Request,
-  callbacks: SSECallback[]
+	state: State,
+	request: Request,
+	callbacks: SSECallback[],
 ): ReadableStream {
-  const id = nanoid();
-  const stream = new ReadableStream({
-    start(controller) {
-      state.uiListeners[id] = (event) => {
-        // If client disconnects, we need to clean up the listener
-        if (request.signal.aborted) {
-          controller.close();
-        }
-        for (const callback of callbacks) {
-          // Go through each callback function
-          const sseData = callback(state, event);
-          for (const { event, data } of sseData) {
-            // One callback can return multiple events
-            controller.enqueue(`id: ${id}\nevent: ${event}\ndata: ${data}\n\n`);
-          }
-        }
-      };
-    },
-    cancel() {
-      console.log("Cancel called for ReadableStream");
-      if (state.uiListeners[id]) {
-        delete state.uiListeners[id];
-      }
-    },
-  });
+	const id = nanoid();
+	const stream = new ReadableStream({
+		start(controller) {
+			state.uiListeners[id] = (event) => {
+				// If client disconnects, we need to clean up the listener
+				if (request.signal.aborted) {
+					controller.close();
+				}
+				for (const callback of callbacks) {
+					// Go through each callback function
+					const sseData = callback(state, event);
+					for (const { event, data } of sseData) {
+						// One callback can return multiple events
+						controller.enqueue(`id: ${id}\nevent: ${event}\ndata: ${data}\n\n`);
+					}
+				}
+			};
+		},
+		cancel() {
+			console.log("Cancel called for ReadableStream");
+			if (state.uiListeners[id]) {
+				delete state.uiListeners[id];
+			}
+		},
+	});
 
-  // If the http client disconnects, we need to clean up the listener
-  request.signal.onabort = () => {
-    if (state.uiListeners[id]) {
-      delete state.uiListeners[id];
-    }
-  };
+	// If the http client disconnects, we need to clean up the listener
+	request.signal.onabort = () => {
+		if (state.uiListeners[id]) {
+			delete state.uiListeners[id];
+		}
+	};
 
-  return stream;
+	return stream;
 }
