@@ -7,6 +7,11 @@ It is inspired by the <a href="https://github.com/rchatley/extreme_startup">Extr
 The code is implemented using Bun, TypeScript, ElysiaJS, HTMX, and Tailwind CSS with DaisyUI.
 Feel free to use it for your own code competition or to learn about the technologies used.
 
+> [!WARNING]  
+> While the game is mostly complete, it is untested and should be considered a release candidate.
+> There are known and unknown bugs, please report any issues you find so that they can be fixed.
+
+
 ## Running server
 
 You can run from source with [bun](https://bun.sh):
