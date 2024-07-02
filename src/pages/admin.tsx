@@ -107,7 +107,7 @@ const PlayOrStop = ({ state }: RoundProps) => {
 	const { status } = state;
 
 	return (
-		<form class="flex flex-row gap-8" method="POST" action="">
+		<form class="flex flex-row gap-8" method="POST" action="" hx-target="this">
 			{status === "stopped" ? (
 				<>
 					<div class="flex flex-row gap-2">
@@ -419,9 +419,14 @@ export const plugin = basePluginSetup()
 	)
 	.post(
 		"/admin/start-game",
-		({ set, store: { state }, query: { mode } }) => {
+		({ set, store: { state }, query: { mode }, htmx }) => {
 			startGame(state, mode);
-			set.redirect = "/admin";
+
+			if (htmx.is) {
+				htmx.location({ path: "/admin", target: "#main" });
+			} else {
+				set.redirect = "/admin";
+			}
 		},
 		{
 			query: t.Object({
@@ -430,18 +435,13 @@ export const plugin = basePluginSetup()
 		},
 	)
 	.post("/admin/stop-game", ({ htmx, set, store: { state } }) => {
-		const Layout = htmx.is ? HXLayout : HTMLLayout;
 		stopGame(state);
 
 		if (htmx.is) {
-			return (
-				<Layout page="Admin">
-					<PlayOrStop state={state} />
-				</Layout>
-			);
+			htmx.location({ path: "/admin", target: "#main" });
+		} else {
+			set.redirect = "/admin";
 		}
-
-		set.redirect = "/admin";
 	})
 	.post("/admin/pause-game", ({ htmx, set, store: { state } }) => {
 		pauseGame(state);

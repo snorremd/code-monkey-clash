@@ -58,6 +58,19 @@ declare global {
 
 let chart: Chart<"line">;
 
+function cleanChart() {
+	const now = new Date().getTime();
+
+	for (const dataset of chart.data.datasets) {
+		dataset.data = dataset.data.filter((point) => {
+			const x = (point as Point).x;
+			console.log("X", now - x < 5 * 60 * 1000);
+			return now - x < 5 * 60 * 1000;
+		});
+	}
+	chart.update();
+}
+
 function renderChart(datasets: ChartConfiguration<"line">["data"]["datasets"]) {
 	console.log("Rendering chart with datasets", datasets);
 
@@ -124,19 +137,9 @@ function renderChart(datasets: ChartConfiguration<"line">["data"]["datasets"]) {
 		});
 
 		// Every minute clear out old data
-		setInterval(() => {
-			const now = new Date();
-			const fiveMinutesAgo = now.getTime() - 5 * 60 * 1000;
-
-			for (const dataset of chart.data.datasets) {
-				dataset.data = dataset.data.filter((point) => {
-					const x = (point as Point).x;
-					console.log("X", x);
-					return x > fiveMinutesAgo;
-				});
-			}
-			chart.update();
-		}, 60 * 1000);
+		setInterval(cleanChart, 60 * 1000);
+		cleanChart();
+		chart.update();
 	}
 }
 
