@@ -10,13 +10,13 @@
  * The main thread then updates the game state accordingly.
  */
 import type { MainWorkerEvent, PlayerWorkerEvent } from "../events";
-import type { GameMode, GameStatus, PlayerLog } from "../state";
 import {
+	type QuestionType,
 	adjustIntervalLinear,
 	defaultInterval,
 	roundToQuestion,
-	type QuestionType,
 } from "../game";
+import type { GameMode, GameStatus, PlayerLog } from "../state";
 
 interface PlayerWorker extends Worker {
 	postMessage: (event: PlayerWorkerEvent) => void;

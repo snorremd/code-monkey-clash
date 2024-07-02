@@ -15,10 +15,14 @@ export const HTMLLayout = ({ page, header, children }: LayoutProps) => {
 				<script src="/public/sse.js" />
 				<script src="/public/client.js" />
 			</head>
-			<body class="bg-base-100" hx-ext="response-targets">
+			<body class="bg-base-100" hx-ext="response-targets" hx-boost="true">
 				<header class="navbar absolute inset-x-0 top-0 z-50 bg-base-300">
 					<div class="flex-1">
-						<a class="btn btn-ghost text-xl text-primary" href="/">
+						<a
+							class="btn btn-ghost text-xl text-primary"
+							href="/"
+							hx-push-url="true"
+						>
 							Code Monkey Clash
 						</a>
 					</div>

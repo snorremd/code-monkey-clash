@@ -1,21 +1,21 @@
 import { type ValidationError, t } from "elysia";
 import { gameQuestions } from "../game/questions";
-import { mapValidationError } from "../helpers/helpers";
-import { HTMLLayout, HXLayout } from "../layouts/main";
-import { basePluginSetup } from "../plugins";
 import {
+	type Player,
 	type State,
+	continueGame,
+	nextRound,
+	pauseGame,
+	previousRound,
 	removePlayer,
+	resetGame,
 	startGame,
 	stopGame,
-	pauseGame,
-	continueGame,
-	resetGame,
-	type Player,
-	nextRound,
-	previousRound,
 } from "../game/state";
+import { mapValidationError } from "../helpers/helpers";
+import { HTMLLayout, HXLayout } from "../layouts/main";
 import { createSSEResponse } from "../middleware/sse/sse";
+import { basePluginSetup } from "../plugins";
 
 interface FormProps {
 	secret?: string;
@@ -30,7 +30,6 @@ const AdminLoginForm = ({ fieldErrors, secret }: FormProps) => {
 				hx-post="/admin/login"
 				hx-target="this"
 				hx-swap="outerHTML"
-				hx-boost
 			>
 				<label class="form-control w-full">
 					<div class="label">
@@ -235,9 +234,9 @@ const PlayerRow = (player: Player) => {
 				<a
 					class="link link-hover"
 					href={`/players/${player.uuid}`}
-					hx-boost="true"
 					hx-target="#content"
 					hx-swap="outerHTML"
+					hx-push-url="true"
 					safe
 				>
 					{player.nick}
@@ -325,7 +324,7 @@ export const plugin = basePluginSetup()
 	.get("/admin", ({ htmx, cookie: { user }, store: { state } }) => {
 		const header = (
 			<div class="">
-				<a href="/admin/logout" class="btn btn-ghost">
+				<a href="/admin/logout" class="btn btn-ghost" hx-push-url="true">
 					Logout
 				</a>
 			</div>

@@ -1,9 +1,10 @@
-import { describe, it, expect } from "bun:test";
+import { describe, expect, it } from "bun:test";
 import {
-	fromPartial,
 	type PartialDeepObject,
+	fromPartial,
 } from "@total-typescript/shoehorn";
 import {
+	type WorkerState,
 	gameContinued,
 	gamePaused,
 	gameStarted,
@@ -11,7 +12,6 @@ import {
 	playerChangedUrl,
 	playerJoined,
 	playerLeft,
-	type WorkerState,
 } from "./player-worker";
 
 describe("player-worker", () => {

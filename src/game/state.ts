@@ -1,6 +1,6 @@
 import { Elysia } from "elysia";
-import type { GameEvent, PlayerWorkerEvent, SaveStateEvent } from "./events";
 import { playerColor } from "../helpers/helpers";
+import type { GameEvent, PlayerWorkerEvent, SaveStateEvent } from "./events";
 import { gameQuestions } from "./questions";
 
 // biome-ignore lint/complexity/useLiteralKeys: <explanation>

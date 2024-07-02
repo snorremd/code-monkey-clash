@@ -3,11 +3,11 @@ import { basePluginSetup } from "../../plugins";
 
 export const plugin = basePluginSetup().get("/", ({ set }) => {
 	const header = (
-		<nav hx-boost="true" hx-target="#main">
-			<a class="btn btn-ghost" href="/scoreboard">
+		<nav hx-target="#main">
+			<a class="btn btn-ghost" href="/scoreboard" hx-push-url="true">
 				Scoreboard
 			</a>
-			<a href="/admin" class="btn btn-ghost">
+			<a href="/admin" class="btn btn-ghost" hx-push-url="true">
 				Admin
 			</a>
 		</nav>
@@ -16,7 +16,6 @@ export const plugin = basePluginSetup().get("/", ({ set }) => {
 		<HTMLLayout page="Home" header={header}>
 			<div
 				class="epic min-w-full max-h-full flex flex-col grow items-center justify-center prose"
-				hx-boost="true"
 				hx-target="#main"
 			>
 				<div class="z-10 flex flex-col prose items-center text-center justify-center">
@@ -34,10 +33,10 @@ export const plugin = basePluginSetup().get("/", ({ set }) => {
 							puzzles the fastest.
 						</p>
 						<div class="flex flex-row gap-4 w-full justify-center">
-							<a class="btn btn-primary" href="/signup">
+							<a class="btn btn-primary" href="/signup" hx-push-url="true">
 								Get Started
 							</a>
-							<a class="btn btn-ghost" href="/scoreboard">
+							<a class="btn btn-ghost" href="/scoreboard" hx-push-url="true">
 								Scoreboard
 							</a>
 						</div>

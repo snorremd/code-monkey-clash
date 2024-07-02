@@ -1,14 +1,14 @@
 import { t } from "elysia";
 import { escape as htmlEscape } from "html-escaper";
-import { HTMLLayout, HXLayout } from "../layouts/main";
-import { basePluginSetup } from "../plugins";
 import {
 	type Player,
-	type State,
 	type PlayerLog,
+	type State,
 	playerSurrender,
 } from "../game/state";
+import { HTMLLayout, HXLayout } from "../layouts/main";
 import { createSSEResponse } from "../middleware/sse/sse";
+import { basePluginSetup } from "../plugins";
 
 interface PlayerLayoutProps {
 	state: State;
@@ -178,7 +178,7 @@ export const plugin = basePluginSetup()
 						<div class="flex flex-col">
 							<h1 class="">Player not found</h1>
 							<p>
-								<a class="link link-success" href="/signup">
+								<a class="link link-success" href="/signup" hx-push-url="true">
 									Create a new player
 								</a>{" "}
 								to compete.

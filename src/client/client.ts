@@ -1,11 +1,11 @@
 import autoAnimate from "@formkit/auto-animate";
-import * as htmx from "htmx.org";
 import {
 	Chart,
-	registerables,
 	type ChartConfiguration,
 	type Point,
+	registerables,
 } from "chart.js";
+import * as htmx from "htmx.org";
 import "chartjs-adapter-date-fns";
 import { CmcCounter } from "./counter";
 

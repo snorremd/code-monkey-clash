@@ -13,13 +13,12 @@ export const notFoundPlugin = basePluginSetup().all("*", () => {
 		<HTMLLayout page="Home" header={header}>
 			<div
 				class="epic min-w-full max-h-full flex flex-col grow items-center justify-center prose"
-				hx-boost="true"
 				hx-target="#main"
 			>
 				<div class="z-10 flex flex-col gap-5 prose items-center text-center justify-center">
 					<div class="rounded-2xl z-10 bg-base-100 p-8 bg-opacity-80 backdrop-blur-sm w-full">
 						<h1 class="mb-5 text-5xl font-bold">404 - Not Found</h1>
-						<a class="btn btn-primary" href="/signup">
+						<a class="btn btn-primary" href="/signup" hx-push-url="true">
 							Get Started
 						</a>
 					</div>

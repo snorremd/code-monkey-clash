@@ -1,15 +1,15 @@
 import staticPlugin from "@elysiajs/static";
 import { Elysia, t } from "elysia";
 
+import { state } from "./game/state";
 import { htmlPlugin } from "./middleware/html/html";
+import { htmxPlugin } from "./middleware/htmx/htmx";
 import { plugin as adminPlugin } from "./pages/admin";
 import { plugin as homePlugin } from "./pages/home/home";
 import { notFoundPlugin } from "./pages/not-found/not-found";
 import { plugin as playerPlugin } from "./pages/player";
-import { plugin as signupPlugin } from "./pages/signup";
-import { htmxPlugin } from "./middleware/htmx/htmx";
-import { state } from "./game/state";
 import { scoreboardPlugin } from "./pages/scoreboard/scoreboard";
+import { plugin as signupPlugin } from "./pages/signup";
 
 const app = new Elysia({
 	serve: {
