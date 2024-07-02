@@ -54,15 +54,15 @@ export const scoreboardPlugin = basePluginSetup()
 
     const datasets: ChartConfiguration["data"]["datasets"] = state.players.map(
       (player) => {
-        const last15Minutes = splitArrayAt(
+        const last5Minutes = splitArrayAt(
           player.log,
-          (log) => log.date < Date.now() - 15 * 60 * 1000
+          (log) => log.date < Date.now() - 5 * 60 * 1000
         )[0];
         return {
           label: player.nick,
           pointRadius: 3,
           backgroundColor: player.color.hex,
-          data: last15Minutes.toReversed().map((log) => ({
+          data: last5Minutes.toReversed().map((log) => ({
             x: log.date,
             y: log.score,
           })),

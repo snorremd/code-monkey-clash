@@ -93,6 +93,7 @@ describe("player-worker", () => {
         {
           type: "game-started",
           mode: "demo",
+          round: 1,
         },
         () => setTimeout(() => {}, 100)
       );
@@ -101,6 +102,7 @@ describe("player-worker", () => {
         fromPartial({
           status: "playing",
           mode: "demo",
+          round: 1,
           timer: expect.any(Object),
         })
       );

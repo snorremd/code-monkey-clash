@@ -2,48 +2,35 @@ import type { State } from "./state";
 import { type Question, gameQuestions, testQuestions } from "./questions";
 
 // Specify intervals in milliseconds to make it easier to work with time
+
 export const defaultInterval = 5000;
 export const minInterval = 2000;
-export const maxInterval = 10000;
-export const maxPositiveTrendInterval = 4000;
-export const intervalStep = 1000;
+export const maxInterval = 20000;
+export const intervalStep = 100;
 
 /**
- * Adjust player question interval based on historical performance.
- * Look at last 20 scores to determine if player has negative or positive trend.
- * If player has a very positive trend, reduce question interval.
- * If player has a negative trend, decrease question interval quickly so they don't get discouraged.
- * If player has moderately positive trend (recovering), increase question interval again.
- * @param interval
- * @param scores
- * @returns
+ * Adjust player question interval/rate based solely on last answer.
+ * If player answered correctly, decrease interval to ask questions more frequently.
+ * If player answered incorrectly, increase interval to ask questions less frequently.
+ * If player answered with no points, keep interval the same.
+ *
+ * @param interval the current interval between questions
+ * @param points the points the player received for the last question
+ * @returns the new interval between questions
  */
-export function adjustQuestionInterval(interval: number, scores: number[]) {
-  // Calculate average score last 10 questions
-  const lastScores = scores.slice(0, 10);
-
-  if (lastScores.length === 0) {
-    return interval;
+export function adjustIntervalLinear(interval: number, points: number) {
+  // Player answered correctly, increase interval
+  if (points > 0) {
+    return Math.max(interval - intervalStep, minInterval);
   }
 
-  const average =
-    lastScores.reduce((acc, score) => acc + score, 0) / lastScores.length;
-
-  console.log("Score average:", average, "Interval:", interval);
-
-  if (average > 0.75) {
-    // Player has a very positive trend so start reducing question interval
-    // But don't go above a certain threshold to avoid punishing successful players
-    return Math.min(maxPositiveTrendInterval, interval + intervalStep);
+  // Player answered incorrectly, decrease interval
+  if (points < 0) {
+    return Math.min(interval + intervalStep, maxInterval);
   }
 
-  if (average >= 0) {
-    // Player is recovering from a negative trend, so decrease question interval
-    return Math.max(minInterval, interval - intervalStep);
-  }
-
-  // Player has a negative trend, so decrease question interval quickly
-  return Math.min(maxInterval, interval + intervalStep * 2);
+  // Player answered with no points, keep interval the same
+  return interval;
 }
 
 type QuestionInput =

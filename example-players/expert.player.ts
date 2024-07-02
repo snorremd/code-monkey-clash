@@ -1,7 +1,7 @@
 /**
  * Expert player has answers to all questions.
- * To simulate a real player, only answer question
- * after seeing it between 2 and 5 times.
+ * To simulate a real player wait some time after
+ * first seeing a question before answering it!
  */
 
 import { gameQuestions } from "../src/game/questions";
@@ -9,30 +9,29 @@ import { gameQuestions } from "../src/game/questions";
 // Get port from Bun command line arguments
 // biome-ignore lint/complexity/useLiteralKeys: <explanation>
 const port = Number.parseInt(Bun.env["CMC_PLAYER_PORT"] ?? "3001", 10);
+const minute = 60000;
 
-const questionFrequency: {
-  [question: string]: { after: number; seen: number };
+const questionSeen: {
+  [question: string]: { until: number };
 } = {};
 
 const server = Bun.serve({
   port,
   fetch(request) {
     const q = new URL(request.url).searchParams.get("q") ?? "";
-    console.log(`Received question: ${q}`);
     const question = gameQuestions.find((question) => question.match(q));
     if (!question) {
       return new Response("Invalid question");
     }
 
-    if (!questionFrequency[q]) {
-      questionFrequency[q] = {
-        after: Math.floor(Math.random() * 3) + 2,
-        seen: 1,
+    if (!questionSeen[q]) {
+      questionSeen[q] = {
+        // Wait between 5 and 10 minutes before answering a question for the first time
+        until: Date.now() + Math.floor(Math.random() * minute * 3) + minute,
       };
     }
 
-    if (questionFrequency[q].seen < questionFrequency[q].after) {
-      questionFrequency[q].seen++;
+    if (questionSeen[q].until > Date.now()) {
       return new Response("I need more time to think...");
     }
 

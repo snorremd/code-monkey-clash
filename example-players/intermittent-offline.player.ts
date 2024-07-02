@@ -11,9 +11,10 @@ import { gameQuestions } from "../src/game/questions";
 // Get port from Bun command line arguments
 // biome-ignore lint/complexity/useLiteralKeys: <explanation>
 const port = Number.parseInt(Bun.env["CMC_PLAYER_PORT"] ?? "3001", 10);
+const minute = 60000;
 
-const questionFrequency: {
-  [question: string]: { after: number; seen: number };
+const questionSeen: {
+  [question: string]: { until: number };
 } = {};
 
 let offline = true;
@@ -42,15 +43,18 @@ const server = Bun.serve({
       return new Response("Invalid question");
     }
 
-    if (!questionFrequency[q]) {
-      questionFrequency[q] = {
-        after: Math.floor(Math.random() * 3) + 2,
-        seen: 1,
+    if (!question) {
+      return new Response("Invalid question");
+    }
+
+    if (!questionSeen[q]) {
+      questionSeen[q] = {
+        // Wait between 5 and 10 minutes before answering a question for the first time
+        until: Date.now() + Math.floor(Math.random() * minute * 3) + minute,
       };
     }
 
-    if (questionFrequency[q].seen < questionFrequency[q].after) {
-      questionFrequency[q].seen++;
+    if (questionSeen[q].until > Date.now()) {
       return new Response("I need more time to think...");
     }
 

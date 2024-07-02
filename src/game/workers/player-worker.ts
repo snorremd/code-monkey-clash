@@ -12,7 +12,7 @@
 import type { MainWorkerEvent, PlayerWorkerEvent } from "../events";
 import type { GameMode, GameStatus, PlayerLog } from "../state";
 import {
-  adjustQuestionInterval,
+  adjustIntervalLinear,
   defaultInterval,
   roundToQuestion,
   type QuestionType,
@@ -118,8 +118,6 @@ async function askPlayerQuestion(
     // If they returned a 200 response check if they answered correctly
     const answer = await response.text();
 
-    console.log("Question", q, "Answer", answer, "Input", input);
-
     if (question.answerIsCorrect(answer, input)) {
       workerState.correct++;
       log.answerRatio = workerState.correct / workerState.counter;
@@ -188,9 +186,9 @@ async function gameLoop() {
   workerState.scores.unshift(log.score) > 20 && workerState.scores.pop();
 
   // Adjust question interval based on player performance
-  workerState.questionInterval = adjustQuestionInterval(
+  workerState.questionInterval = adjustIntervalLinear(
     workerState.questionInterval,
-    workerState.scores
+    log.points
   );
 
   // Notify main worker that we've got an answer (or not)
