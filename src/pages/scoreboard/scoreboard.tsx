@@ -10,6 +10,8 @@ const PlayerRow = ({ player }: { player: Player }) => {
 		<li
 			class="flex flex-row justify-between bg-base-300 px-4 py-2 rounded-2xl bg-opacity-30 shadow-lg z-1"
 			id={`player-${player.nick}`}
+			sse-swap={`player-left-${player.nick}`}
+			hx-swap="delete"
 		>
 			<h2 class={`text-xl ${player.color.class}`} safe>
 				{player.nick}
@@ -96,6 +98,7 @@ export const scoreboardPlugin = basePluginSetup()
 						sse-swap="player-joined-chart"
 						hx-swap="none"
 					/>
+					<span class="hidden" sse-swap="player-left-chart" hx-swap="none" />
 				</div>
 				<script>
 					{htmx.is
@@ -155,6 +158,18 @@ export const scoreboardPlugin = basePluginSetup()
 								},
 							]
 						: [];
+				}
+
+				if (event.type === "player-left") {
+					return [
+						{
+							event: `player-left-${event.nick}`,
+						},
+						{
+							event: "player-left-chart",
+							data: JSON.stringify({ nick: event.nick }),
+						},
+					];
 				}
 
 				return [];

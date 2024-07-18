@@ -186,4 +186,14 @@ htmx.on("htmx:sseMessage", (evt) => {
 		chart.data.datasets.push(data);
 		chart.update();
 	}
+
+	// If player leaves, remove them from the chart
+	if (evt instanceof CustomEvent && evt.detail.type === "player-left-chart") {
+		const nick = JSON.parse(evt.detail.data).nick;
+		const datasetIndex = chart.data.datasets.findIndex((d) => d.label === nick);
+		if (datasetIndex !== -1) {
+			chart.data.datasets.splice(datasetIndex, 1);
+			chart.update();
+		}
+	}
 });

@@ -12,7 +12,7 @@ interface PlayerJoined extends Pick<Player, "uuid" | "nick" | "url"> {
  * Event sent to player worker thread when a player leaves the game.
  * At this point the worker thread should be terminated.
  */
-interface PlayerLeft extends Pick<Player, "uuid"> {
+interface PlayerLeft extends Pick<Player, "uuid" | "nick"> {
 	type: "player-left";
 }
 
