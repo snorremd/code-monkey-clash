@@ -165,12 +165,12 @@ htmx.on("htmx:sseMessage", (evt) => {
 		sortScoreboard();
 	}
 
-	// If the event is a player-chart event, update the chart with the new data
+	// If the event is a player-score-chart event, update the chart with the new score data
 	if (
 		evt instanceof CustomEvent &&
-		evt.detail.type.startsWith("player-chart-")
+		evt.detail.type.startsWith("player-score-chart-")
 	) {
-		const nick = evt.detail.type.replace("player-chart-", "");
+		const nick = evt.detail.type.replace("player-score-chart-", "");
 		const data = JSON.parse(evt.detail.data);
 		const dataset = chart.data.datasets.find((d) => d.label === nick);
 
@@ -178,5 +178,12 @@ htmx.on("htmx:sseMessage", (evt) => {
 			dataset.data.push(data);
 			chart.update();
 		}
+	}
+
+	// If the event is a player-joined-chart event, add the player to the chart
+	if (evt instanceof CustomEvent && evt.detail.type === "player-joined-chart") {
+		const data = JSON.parse(evt.detail.data);
+		chart.data.datasets.push(data);
+		chart.update();
 	}
 });

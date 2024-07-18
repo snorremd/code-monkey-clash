@@ -2,5 +2,8 @@
   "editor.defaultFormatter": "biomejs.biome",
   "editor.formatOnSave": true,
   "outline.collapseItems": "alwaysExpand",
-  "editor.foldingImportsByDefault": false
+  "editor.foldingImportsByDefault": false,
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "biomejs.biome"
+  }
 }

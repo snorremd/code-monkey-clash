@@ -23,7 +23,7 @@ const PlayerRow = ({ player }: { player: Player }) => {
 			</span>
 			<span // Use a hidden element to swap the chart data, don't actually swap json into the DOM
 				class="hidden"
-				sse-swap={`player-chart-${player.nick}`}
+				sse-swap={`player-score-chart-${player.nick}`}
 				hx-swap="none"
 			/>
 		</li>
@@ -38,7 +38,9 @@ const PlayerList = ({ players }: PlayerTableProps) => {
 	return (
 		<ul
 			id="scoreboard-list"
-			class="auto-animate flex flex-col gap-2 z-10 bg-opacity-80 backdrop-blur-sm drop-shadow-lg max-h-[80vh] overflow-y-scroll scrollbar-w-none"
+			class="auto-animate ßflex flex-col gap-2 z-10 bg-opacity-80 backdrop-blur-sm drop-shadow-lg max-h-[80vh] overflow-y-scroll scrollbar-w-none"
+			sse-swap="player-joined"
+			hx-swap="afterbegin"
 		>
 			{players.map((player) => (
 				// biome-ignore lint/correctness/useJsxKeyInIterable: <explanation>
@@ -89,6 +91,11 @@ export const scoreboardPlugin = basePluginSetup()
 						<div class="epic-dark" />
 						<canvas id="score-board-chart" class="relative" />
 					</div>
+					<span // Use a hidden element to swap the chart data, don't actually swap json into the DOM
+						class="hidden"
+						sse-swap="player-joined-chart"
+						hx-swap="none"
+					/>
 				</div>
 				<script>
 					{htmx.is
@@ -110,13 +117,44 @@ export const scoreboardPlugin = basePluginSetup()
 							data: `${event.log.score}`,
 						},
 						{
-							event: `player-chart-${event.nick}`,
+							event: `player-score-chart-${event.nick}`,
 							data: JSON.stringify({
 								x: new Date(event.log.date).toISOString(),
 								y: event.log.score,
 							}),
 						},
 					];
+				}
+
+				if (event.type === "player-joined") {
+					const player = state.players.find((p) => p.uuid === event.uuid);
+					return player
+						? [
+								{
+									event: "player-joined",
+									data: `${<PlayerRow player={player} />}`,
+								},
+								{
+									// Pass chart data config as SSE event
+									event: "player-joined-chart",
+									data: JSON.stringify({
+										label: player.nick,
+										pointRadius: 3,
+										backgroundColor: player.color.hex,
+										data: [
+											{
+												x: new Date().toISOString(),
+												y: player.log[0]?.score ?? 0,
+											},
+										],
+										borderColor: player.color.hex,
+										borderWidth: 2,
+										fill: false,
+										tension: 0.3,
+									}),
+								},
+							]
+						: [];
 				}
 
 				return [];
