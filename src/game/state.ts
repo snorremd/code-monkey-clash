@@ -189,7 +189,11 @@ export function playerSurrender(state: State, uuid: string) {
 	const player = state.players.find((p) => p.uuid === uuid);
 	if (player) {
 		player.playing = false;
-		player.worker?.postMessage({ type: "player-left", uuid });
+		player.worker?.postMessage({
+			type: "player-left",
+			uuid,
+			nick: player.nick,
+		});
 		player.worker = undefined;
 		saveState(state);
 	}
@@ -197,10 +201,20 @@ export function playerSurrender(state: State, uuid: string) {
 
 export const removePlayer = (state: State, uuid: string) => {
 	const player = state.players.find((p) => p.uuid === uuid);
-	player?.worker?.postMessage({ type: "player-left", uuid });
+	player?.worker?.postMessage({ type: "player-left", uuid, nick: player.nick });
 	state.players = state.players.filter((p) => p.uuid !== uuid);
 
 	saveState(state);
+
+	if (player) {
+		for (const listener of Object.values(state.uiListeners)) {
+			listener({
+				type: "player-left",
+				uuid,
+				nick: player.nick,
+			});
+		}
+	}
 };
 
 export const startGame = (state: State, mode: State["mode"]) => {
