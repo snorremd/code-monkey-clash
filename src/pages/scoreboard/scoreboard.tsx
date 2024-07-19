@@ -21,7 +21,7 @@ const PlayerRow = ({ player }: { player: Player }) => {
 				hx-swap="innerHTML"
 				sse-swap={`player-score-${player.nick}`}
 			>
-				{player.log[0]?.score ?? 0}
+				{player.score}
 			</span>
 			<span // Use a hidden element to swap the chart data, don't actually swap json into the DOM
 				class="hidden"
@@ -132,7 +132,7 @@ export const scoreboardPlugin = basePluginSetup()
 	.get("/scoreboard/winners", ({ htmx, store: { state } }) => {
 		const Layout = htmx.is ? HXLayout : HTMLLayout;
 		const winners = state.players
-			.toSorted((a, b) => (b.log[0]?.score ?? 0) - (a.log[0]?.score ?? 0))
+			.toSorted((a, b) => b.score - a.score)
 			.slice(0, 3);
 		const medals = ["🥇", "🥈", "🥉"];
 		return (
@@ -198,7 +198,7 @@ export const scoreboardPlugin = basePluginSetup()
 										data: [
 											{
 												x: new Date().toISOString(),
-												y: player.log[0]?.score ?? 0,
+												y: player.score,
 											},
 										],
 										borderColor: player.color.hex,

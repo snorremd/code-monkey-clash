@@ -252,7 +252,7 @@ const PlayerRow = (player: Player) => {
 			</td>
 			<td safe>{player.url}</td>
 			<td sse-swap={`player-score-${player.uuid}`} hx-swap="innerHTML">
-				{player.log?.[0]?.score ?? 0}
+				{player.score ?? 0}
 			</td>
 			<td>
 				{player.playing ? (
