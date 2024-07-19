@@ -51,6 +51,15 @@ interface GamePaused {
 }
 
 /**
+ * Event sent to player worker thread when the game ends.
+ * This event is sent when the game is over and a winner should be declared.
+ * The worker thread should be terminated after this event.
+ */
+interface GameEnded {
+	type: "game-ended";
+}
+
+/**
  * Event sent to player worker thread when the game continues
  * after being paused.
  * Should resume the game loop.
@@ -103,6 +112,7 @@ export type MainWorkerEvent =
 	| PlayerChangeUrl
 	| GameStarted
 	| GameStopped
+	| GameEnded
 	| GamePaused
 	| GameContinued
 	| ChangeRound;

@@ -11,6 +11,7 @@ import {
 	resetGame,
 	startGame,
 	stopGame,
+	endGame,
 } from "../game/state";
 import { mapValidationError } from "../helpers/helpers";
 import { HTMLLayout, HXLayout } from "../layouts/main";
@@ -108,7 +109,7 @@ const PlayOrStop = ({ state }: RoundProps) => {
 
 	return (
 		<form class="flex flex-row gap-8" method="POST" action="" hx-target="this">
-			{status === "stopped" ? (
+			{status === "stopped" || status === "ended" ? (
 				<>
 					<div class="flex flex-row gap-2">
 						<button
@@ -164,6 +165,13 @@ const PlayOrStop = ({ state }: RoundProps) => {
 					>
 						Stop Game
 					</button>
+					<button
+						type="submit"
+						formaction="/admin/end-game"
+						class="btn btn-outline btn-success"
+					>
+						End game
+					</button>
 				</>
 			) : null}
 			{status === "paused" ? (
@@ -193,13 +201,13 @@ const Round = ({ state }: RoundProps) => {
 					&nbsp;of&nbsp;
 					{total}
 				</p>
-				<form class="" hx-trigger="click">
+				<form>
 					<div class="flex flex-row join gap-[1px]">
 						<button
 							class="join-item btn btn-outline btn-error"
 							type="submit"
 							action="/admin/previous-round"
-							disabled={status === "stopped" || round === 0}
+							disabled={status === "stopped" || round === 1}
 							hx-post="/admin/previous-round"
 						>
 							Previous Round
@@ -209,7 +217,7 @@ const Round = ({ state }: RoundProps) => {
 							class="join-item btn btn-outline btn-success"
 							type="submit"
 							action="/admin/next-round"
-							disabled={status === "stopped" || round === total - 1}
+							disabled={status === "stopped" || round === total}
 							hx-post="/admin/next-round"
 						>
 							Next Round
@@ -434,6 +442,15 @@ export const plugin = basePluginSetup()
 			}),
 		},
 	)
+	.post("/admin/end-game", ({ htmx, set, store: { state } }) => {
+		endGame(state);
+
+		if (htmx.is) {
+			htmx.location({ path: "/admin", target: "#main" });
+		} else {
+			set.redirect = "/admin";
+		}
+	})
 	.post("/admin/stop-game", ({ htmx, set, store: { state } }) => {
 		stopGame(state);
 

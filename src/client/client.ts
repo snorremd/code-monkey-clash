@@ -8,6 +8,7 @@ import {
 import * as htmx from "htmx.org";
 import "chartjs-adapter-date-fns";
 import { CmcCounter } from "./counter";
+import { startConfetti } from "./confetti";
 
 // First some type overrides
 declare global {
@@ -151,6 +152,14 @@ htmx.onLoad(() => {
 		document.querySelectorAll(".auto-animate"),
 	)) {
 		autoAnimate(element as HTMLElement);
+	}
+
+	// If the confetti canvas is present, start the confetti animation
+	const confettiCanvas = document.getElementById(
+		"confetti",
+	) as HTMLCanvasElement | null;
+	if (confettiCanvas) {
+		startConfetti(confettiCanvas);
 	}
 });
 
