@@ -10,7 +10,7 @@ const stateLocation = Bun.env["CMC_STATE_FILE"] ?? "./state.json";
 const maxRounds = Math.floor(gameQuestions.length / 2);
 
 // Setup types for the game state including player logs, workers, etc
-export type GameStatus = "playing" | "paused" | "stopped";
+export type GameStatus = "playing" | "paused" | "stopped" | "ended";
 export type GameMode = "demo" | "game";
 
 export interface PlayerLog {
@@ -224,18 +224,48 @@ export const startGame = (state: State, mode: State["mode"]) => {
 	state.gameStartedAt = new Date().toISOString();
 	state.roundStartedAt = new Date().toISOString();
 
+	const event = {
+		type: "game-started",
+		mode: mode ?? "demo",
+		round: state.round,
+	} satisfies GameEvent;
+
 	// Notify all player workers that the game has started
 	for (const player of state.players) {
 		player.worker = newWorker(player);
-		player.worker?.postMessage({
-			type: "game-started",
-			mode: mode ?? "demo",
-			round: state.round,
-		});
+		player.worker?.postMessage(event);
 	}
 	saveState(state);
+
+	for (const listener of Object.values(state.uiListeners)) {
+		listener(event);
+	}
 };
 
+/**
+ * Ends the current game and announces the winner.
+ * Terminates the player worker loops, but does not reset game state.
+ * At this point the game is considered over.
+ */
+export const endGame = (state: State) => {
+	state.status = "ended";
+	for (const player of state.players) {
+		player.worker?.postMessage({ type: "game-ended" });
+	}
+
+	saveState(state);
+
+	for (const listener of Object.values(state.uiListeners)) {
+		listener({ type: "game-ended" });
+	}
+};
+
+/**
+ * Stops the current game without announcing the winner.
+ * Terminates the player worker loops, but does not reset player states.
+ * Resets game information about round, time played, etc.
+ * @param state The current game state
+ */
 export const stopGame = (state: State) => {
 	state.status = "stopped";
 	state.round = 0;
@@ -246,8 +276,17 @@ export const stopGame = (state: State) => {
 	}
 
 	saveState(state);
+
+	for (const listener of Object.values(state.uiListeners)) {
+		listener({ type: "game-stopped" });
+	}
 };
 
+/**
+ * Pauses the current game, terminates the player workers loops,
+ * but does not reset any game state information.
+ * @param state
+ */
 export const pauseGame = (state: State) => {
 	state.status = "paused";
 	for (const player of state.players) {
@@ -255,6 +294,10 @@ export const pauseGame = (state: State) => {
 	}
 
 	saveState(state);
+
+	for (const listener of Object.values(state.uiListeners)) {
+		listener({ type: "game-paused" });
+	}
 };
 
 export const resetGame = (state: State) => {
@@ -287,6 +330,10 @@ export const continueGame = (state: State) => {
 	}
 
 	saveState(state);
+
+	for (const listener of Object.values(state.uiListeners)) {
+		listener({ type: "game-continued" });
+	}
 };
 
 export const nextRound = (state: State) => {

@@ -1,5 +1,5 @@
 import type { ChartConfiguration } from "chart.js";
-import type { Player } from "../../game/state";
+import type { Player, State } from "../../game/state";
 import { splitArrayAt } from "../../helpers/helpers";
 import { HTMLLayout, HXLayout } from "../../layouts/main";
 import { createSSEResponse } from "../../middleware/sse/sse";
@@ -40,7 +40,7 @@ const PlayerList = ({ players }: PlayerTableProps) => {
 	return (
 		<ul
 			id="scoreboard-list"
-			class="auto-animate ßflex flex-col gap-2 z-10 bg-opacity-80 backdrop-blur-sm drop-shadow-lg max-h-[80vh] overflow-y-scroll scrollbar-w-none"
+			class="auto-animate flex flex-col gap-2 z-10 bg-opacity-80 backdrop-blur-sm drop-shadow-lg max-h-[80vh] overflow-y-scroll scrollbar-w-none"
 			sse-swap="player-joined"
 			hx-swap="afterbegin"
 		>
@@ -49,6 +49,22 @@ const PlayerList = ({ players }: PlayerTableProps) => {
 				<PlayerRow player={player} />
 			))}
 		</ul>
+	);
+};
+
+const GameStatus = ({ status }: { status: State["status"] }) => {
+	return (
+		<div
+			class={`z-10 flex backdrop-blur-sm p-16 rounded ${status === "playing" ? "hidden" : ""}`}
+			sse-swap="game-status"
+			hx-swap="outerHTML"
+		>
+			{status !== "ended" ? (
+				<span class="text-9xl capitalize">{status}</span>
+			) : (
+				<meta http-equiv="refresh" content="0; url=/scoreboard/winners" />
+			)}
+		</div>
 	);
 };
 
@@ -93,6 +109,9 @@ export const scoreboardPlugin = basePluginSetup()
 						<div class="epic-dark" />
 						<canvas id="score-board-chart" class="relative" />
 					</div>
+					<div class="min-h-screen min-w-screen max-h-screen max-w-screen absolute inset-0 pt-24 flex flex-col items-center text-center justify-center">
+						<GameStatus status={state.status} />
+					</div>
 					<span // Use a hidden element to swap the chart data, don't actually swap json into the DOM
 						class="hidden"
 						sse-swap="player-joined-chart"
@@ -107,6 +126,38 @@ export const scoreboardPlugin = basePluginSetup()
 							)}))`
 						: `renderChart(${JSON.stringify(datasets)})`}
 				</script>
+			</Layout>
+		);
+	})
+	.get("/scoreboard/winners", ({ htmx, store: { state } }) => {
+		const Layout = htmx.is ? HXLayout : HTMLLayout;
+		const winners = state.players
+			.toSorted((a, b) => (b.log[0]?.score ?? 0) - (a.log[0]?.score ?? 0))
+			.slice(0, 3);
+		const medals = ["🥇", "🥈", "🥉"];
+		return (
+			<Layout page="Winner">
+				<div
+					class="epic min-w-full max-h-full flex flex-col grow items-center justify-center"
+					hx-target="#main"
+				>
+					<canvas id="confetti" class="absolute inset-0 w-screen h-screen" />
+					<div class="z-10 flex flex-col items-center text-center justify-center backdrop-blur-md p-16">
+						<ol class="list-none text-start flex flex-col gap-8">
+							{winners.map((player, i) => (
+								// biome-ignore lint/correctness/useJsxKeyInIterable: <explanation>
+								<li
+									class={`text-8xl ${player.color.class} min-w-full flex flex-row gap-8 justify-between`}
+								>
+									<span safe>
+										{medals[i]} {player.nick}
+									</span>{" "}
+									<span>{player.score}</span>
+								</li>
+							))}
+						</ol>
+					</div>
+				</div>
 			</Layout>
 		);
 	})
@@ -168,6 +219,23 @@ export const scoreboardPlugin = basePluginSetup()
 						{
 							event: "player-left-chart",
 							data: JSON.stringify({ nick: event.nick }),
+						},
+					];
+				}
+
+				const gameStatusEvents = [
+					"game-started",
+					"game-stopped",
+					"game-paused",
+					"game-continued",
+					"game-ended",
+				];
+
+				if (gameStatusEvents.includes(event.type)) {
+					return [
+						{
+							event: "game-status",
+							data: `${<GameStatus status={state.status} />}`,
 						},
 					];
 				}

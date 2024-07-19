@@ -231,6 +231,10 @@ self.onmessage = (event: MessageEvent<MainWorkerEvent>) => {
 			gameStopped(workerState);
 			quit = true;
 			break;
+		case "game-ended":
+			gameStopped(workerState);
+			quit = true;
+			break;
 		case "game-paused":
 			gamePaused(workerState);
 			break;
