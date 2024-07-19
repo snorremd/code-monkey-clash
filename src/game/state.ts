@@ -138,6 +138,7 @@ const newWorker = (player: Player) => {
 					const player = state.players.find((p) => p.uuid === uuid);
 					if (player) {
 						player.log.unshift(log);
+						player.score += log.score;
 					}
 					// We need to notify all relevant listeners about the new log
 					// Multiple listeners can be listening for the same player
