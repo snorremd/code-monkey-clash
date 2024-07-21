@@ -3,17 +3,38 @@
  * It draws to a canvas element and draws confetti using Canvas
  * draw paths.
  *
- * Each confetti is modeled as a particle with position coordinates,
- * color, tilt, rotation and other properties. We use requestAnimationFrame
- * to make a render loop that updates the position of each confetti particle
- * and redraws the canvas.
+ * Each confetti is modeled as a set of properties each being a 64 bit float with properties:
+ * - 0 radius: radius of the particle
+ * - 1 color: color index of the particle
+ * - 2 xSpeed: horizontal speed of the particle
+ * - 3 ySpeed: vertical speed of the particle
+ * - 4 rSpeed: rotation speed of the particle
+ * - 5 xAmplitude: horizontal flutter amplitude of the particle
+ * - 6 yAmplitude: vertical flutter amplitude of the particle
+ * - 7 x: x-coordinate of the particle
+ * - 8 y: y-coordinate of the particle
+ * - 9 tilt: tilt of the particle (angle)
+ *
+ * This makes each confetti particle 10  * 8 = 80 bytes in size taking 10 spaces in a Float64Array.
+ * Given 500 particles this would take about 39KB of memory fitting nicely in any CPU cache. This
+ * should make the calculations for each particle very fast.
  */
 
-/** Number of confettis to draw */
-const confettiCount = 500;
+/** Width of one confetti's parameters */
+const confettiWidth = 10;
+const radiusOffset = 0;
+const colorOffset = 1;
+const xSpeedOffset = 2;
+const ySpeedOffset = 3;
+const rSpeedOffset = 4;
+const xAmplitudeOffset = 5;
+const yAmplitudeOffset = 6;
+const xOffset = 7;
+const yOffset = 8;
+const tiltOffset = 9;
 
-/** Adjust the vertical speed of the confetti */
-const speedFactor = -2;
+/** Number of confettis to draw */
+const confettiCount = 5000;
 
 /** Confetti colors from Daisy UI */
 const colors = [
@@ -26,71 +47,6 @@ const colors = [
 	"#fb923c", // Warning
 	"#f87171", // Error
 ] as const;
-
-type Color = (typeof colors)[number];
-
-/**
- * The TypeScript interface for a confetti particle.
- * Defines properties and methods for a single confetti particle.
- */
-interface ConfettiParticle {
-	/** Canvas element to draw to */
-	canvas: HTMLCanvasElement;
-	/** The Canvas 2D context */
-	ctx: CanvasRenderingContext2D;
-	/** x-coordinate of the particle */
-	x: number;
-	/** y-coordinate of the particle */
-	y: number;
-	/** Radius of the particle */
-	r: number;
-	/** Affects vertical and horizontal velocity/speed */
-	d: number;
-	/** Color of the particle */
-	color: Color;
-	/** Tilt of the particle */
-	tilt: number;
-	/** Draw the particle on the canvas */
-	draw: () => void;
-}
-
-class ConfettiParticleImpl implements ConfettiParticle {
-	canvas: HTMLCanvasElement;
-	ctx: CanvasRenderingContext2D;
-	x: number;
-	y: number;
-	r: number;
-	d: number;
-	color: Color;
-	tilt: number;
-
-	/**
-	 * Create a new confetti particle with random position and movement properties.
-	 * @param canvas The canvas element to draw the confetti particle on
-	 * @param confettiCount The index count of this confetti particle to introduce randomness
-	 */
-	constructor(canvas: HTMLCanvasElement, confettiCount: number) {
-		this.canvas = canvas;
-		// biome-ignore lint/style/noNonNullAssertion: <explanation>
-		this.ctx = canvas.getContext("2d")!;
-		this.x = Math.random() * this.canvas.width;
-		this.y = Math.random() * this.canvas.height - canvas.height;
-		this.r = Math.random() * 10 + 10;
-		this.d = Math.random() * confettiCount;
-		this.color = colors[Math.floor(Math.random() * colors.length)];
-		this.tilt = Math.floor(Math.random() * 10) - 10;
-	}
-
-	draw() {
-		// Draw the confetti particle using a path
-		this.ctx.beginPath(); // Start a new path
-		this.ctx.lineWidth = this.r / 2; // Sets thickness for lines in this 2D Canvas Context to half the radius of the particle
-		this.ctx.strokeStyle = this.color; // Sets the color used to stroke the lines of the path to the particle's color
-		this.ctx.moveTo(this.x + this.tilt + this.r / 4, this.y); // Begin new sub-path at the left edge of the particle
-		this.ctx.lineTo(this.x + this.tilt, this.y + this.tilt + this.r / 4); // Add a line to the right edge of the particle
-		this.ctx.stroke(); // Draw the stroke of the path using defined styles
-	}
-}
 
 /**
  * The main function to start the confetti animation.
@@ -106,28 +62,69 @@ export function startConfetti(canvas: HTMLCanvasElement) {
 	canvas.height = window.innerHeight;
 
 	// Create an array of confetti particles
-	const confettis: ConfettiParticle[] = [];
+	const confetti = new Float64Array(confettiCount * confettiWidth);
 
 	for (let i = 0; i < confettiCount; i++) {
-		confettis.push(new ConfettiParticleImpl(canvas, i));
+		// Initialize each confetti particle with random properties
+		const index = i * confettiWidth;
+		confetti[index + radiusOffset] = Math.random() * 10 + 10; // radius
+		confetti[index + colorOffset] = Math.floor(Math.random() * colors.length); // color
+		confetti[index + xSpeedOffset] = Math.random() * 2 - 1; // xSpeed
+		confetti[index + ySpeedOffset] = Math.random() * 2 + 1; // ySpeed
+		confetti[index + rSpeedOffset] = Math.random() * 0.1 - 0.05; // rSpeed
+		confetti[index + xAmplitudeOffset] = Math.random() * 2 - 1; // xAmplitude
+		confetti[index + yAmplitudeOffset] = Math.random() * 2 - 1; // yAmplitude
+		confetti[index + xOffset] = Math.random() * canvas.width; // Start x-coordinate
+		confetti[index + yOffset] = Math.random() * canvas.height - canvas.height; // Start y-coordinate
+		confetti[index + tiltOffset] = Math.random() * 10 - 5; // Start tilt
 	}
 
-	// Inner confetti loop function to draw the confetti on each requestAnimationFrame
+	let time = 0;
+
 	function drawConfetti() {
 		requestAnimationFrame(drawConfetti);
 		ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+		time += 0.06;
+
 		for (let i = 0; i < confettiCount; i++) {
-			const confetti = confettis[i];
-			confetti.y += (Math.cos(confetti.d) + speedFactor + confetti.r / 2) / 2;
-			confetti.x += Math.sin(confetti.d);
+			// Get the properties of the confetti particle
+			const index = i * confettiWidth;
+			const radius = confetti[index + radiusOffset];
+			const color = colors[confetti[index + colorOffset]];
+			const xSpeed = confetti[index + xSpeedOffset];
+			const ySpeed = confetti[index + ySpeedOffset];
+			const rSpeed = confetti[index + rSpeedOffset];
+			const xAmplitude = confetti[index + xAmplitudeOffset];
+			const yAmplitude = confetti[index + yAmplitudeOffset];
 
-			confetti.draw();
+			let x = confetti[index + xOffset];
+			let y = confetti[index + yOffset];
+			let tilt = confetti[index + tiltOffset];
 
-			if (confetti.y > canvas.height) {
-				confetti.x = Math.random() * canvas.width;
-				confetti.y = -20;
-				confetti.tilt = Math.floor(Math.random() * 10) - 10;
+			// Draw the confetti particle
+			ctx.beginPath();
+			ctx.lineWidth = radius / 2;
+			ctx.strokeStyle = color;
+			ctx.moveTo(x + tilt + radius / 4, y);
+			ctx.lineTo(x + tilt, y + tilt + radius / 4);
+			ctx.stroke();
+
+			// Update the properties of the confetti particle
+			y += ySpeed; // Move the particle down
+			x += xSpeed; // Move the particle right
+			tilt += rSpeed; // Rotate the particle
+			x += Math.sin(i + time) * xAmplitude; // Flutter horizontally
+			y += Math.cos(i + time) * yAmplitude; // Flutter vertically
+
+			// Update the properties of the confetti particle
+			confetti[index + xOffset] = x;
+			confetti[index + yOffset] = y;
+
+			if (y > canvas.height) {
+				confetti[index + xOffset] = Math.random() * canvas.width;
+				confetti[index + yOffset] = -20;
+				confetti[index + tiltOffset] = Math.random() * 10 - 5;
 			}
 		}
 	}
