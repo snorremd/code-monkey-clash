@@ -5,49 +5,70 @@ import {
 	type Point,
 	registerables,
 } from "chart.js";
-import * as htmx from "htmx.org";
 import "chartjs-adapter-date-fns";
 import { CmcCounter } from "./counter";
 import { startConfetti } from "./confetti";
-
-// First some type overrides
-declare global {
-	interface Window {
-		htmx: typeof htmx;
-	}
-}
 
 // Then we register some chart plugins and web components
 Chart.register(...registerables);
 customElements.define("cmc-counter", CmcCounter);
 
-// Then define some functions to sort the scoreboard and render the chart
-function sortScoreboard() {
-	const list = document.getElementById("scoreboard-list");
-	if (!list) {
-		return;
-	}
+/**
+ * Define a type for holding a map of sort functions.
+ * Each function accepts two strings and returns a number.
+ * The key is the name of the function.
+ */
+type SortFunctions = {
+	[key: string]: (a: string, b: string) => number;
+};
 
-	const items = Array.from(list.children);
+/**
+ * A map of sort function implementations.
+ * Allows us to sort elements on different criteria.
+ * For example, we can sort elements by score or by localeCompare
+ * if values are nicknames. If values are stringly numbers we
+ * can sort them by the numeric value.
+ */
+const sortFunctions: SortFunctions = {
+	score: (a, b) => Number.parseInt(b) - Number.parseInt(a),
+	localeCompare: (a, b) => a.localeCompare(b),
+};
 
-	items.sort((a, b) => {
-		const scoreA = Number.parseInt(
-			a.querySelector("span")?.innerText ?? "0",
-			10,
-		);
-		const scoreB = Number.parseInt(
-			b.querySelector("span")?.innerText ?? "0",
-			10,
-		);
+/**
+ * Sorts all elements with the attribute "sort".
+ * The value of the attribute specifies the value in each child
+ * to use for sorting. The optional attribute "sortFn" specifies
+ * the name of the function to use for sorting.
+ *
+ * Fallbacks to "localeCompare" if the function is not found.
+ * We simply remove the elements in the list and re-append them
+ * in the sorted order.
+ *
+ * Works with auto-animate to animate the sorting.
+ */
+function sortSortable() {
+	// First find all elements with attribute "sort"
+	const sortableElements = Array.from(document.querySelectorAll("[sort]"));
 
-		const randomNumberBetweenMinus1And1 = Math.random() * 2 - 1;
-		return scoreB - (scoreA + randomNumberBetweenMinus1And1); // Sort descending order (highest score first)
-	});
+	// For each sortable element we sort the children by the attribute "sortkey"
+	for (const sortableElement of sortableElements) {
+		const sortAttr = sortableElement.getAttribute("sort") ?? "";
+		const fnName = sortableElement.getAttribute("sortFn") ?? "";
+		// biome-ignore lint/complexity/useLiteralKeys: <explanation>
+		const sortFn = sortFunctions[fnName] ?? sortFunctions["localeCompare"];
+		const items = Array.from(sortableElement.children);
 
-	// Clear the list and re-append sorted items
-	list.innerHTML = "";
-	for (const item of items) {
-		list.appendChild(item);
+		items.sort((a, b) => {
+			const sortValueA = a.getAttribute(sortAttr) ?? "";
+			const sortValueB = b.getAttribute(sortAttr) ?? "";
+			return sortFn(sortValueA, sortValueB);
+		});
+
+		// Clear the list and re-append sorted items
+		sortableElement.innerHTML = "";
+		for (const item of items) {
+			sortableElement.appendChild(item);
+		}
 	}
 }
 
@@ -61,12 +82,12 @@ let chart: Chart<"line">;
 
 function cleanChart() {
 	const now = new Date().getTime();
+	const fiveMinutesAgo = now - 5 * 60 * 1000;
 
 	for (const dataset of chart.data.datasets) {
 		dataset.data = dataset.data.filter((point) => {
 			const x = (point as Point).x;
-			console.log("X", now - x < 5 * 60 * 1000);
-			return now - x < 5 * 60 * 1000;
+			return x >= fiveMinutesAgo;
 		});
 	}
 	chart.update();
@@ -146,11 +167,12 @@ function renderChart(datasets: ChartConfiguration<"line">["data"]["datasets"]) {
 
 window.renderChart = renderChart;
 
-htmx.onLoad(() => {
+function htmxOnLoad() {
 	// Find all elements with the auto-animate class and animate them
 	for (const element of Array.from(
 		document.querySelectorAll(".auto-animate"),
 	)) {
+		console.info("Auto animating", element);
 		autoAnimate(element as HTMLElement);
 	}
 
@@ -161,26 +183,18 @@ htmx.onLoad(() => {
 	if (confettiCanvas) {
 		startConfetti(confettiCanvas);
 	}
-});
+}
 
-// On SSE messages do DOM-manipulation where necessary
-htmx.on("htmx:sseMessage", (evt) => {
-	// If player score changes sort the scoreboard
-	if (
-		evt instanceof CustomEvent &&
-		evt.detail.type.startsWith("player-score-")
-	) {
-		// Sort the scoreboard when a player's score changes
-		sortScoreboard();
-	}
+function htmxSSEMessage(evt: Event) {
+	// On SSE messages do DOM-manipulation where necessary
+	sortSortable();
 
 	// If the event is a player-score-chart event, update the chart with the new score data
 	if (
 		evt instanceof CustomEvent &&
-		evt.detail.type.startsWith("player-score-chart-")
+		evt.detail.type.startsWith("player-score-chart")
 	) {
-		const nick = evt.detail.type.replace("player-score-chart-", "");
-		const data = JSON.parse(evt.detail.data);
+		const { nick, ...data } = JSON.parse(evt.detail.data);
 		const dataset = chart.data.datasets.find((d) => d.label === nick);
 
 		if (dataset) {
@@ -205,4 +219,12 @@ htmx.on("htmx:sseMessage", (evt) => {
 			chart.update();
 		}
 	}
-});
+}
+
+window.onload = () => {
+	console.info("Running client.ts window.onload setup function");
+	document.body.addEventListener("htmx:load", htmxOnLoad);
+	document.body.addEventListener("htmx:sseMessage", htmxSSEMessage);
+
+	htmxOnLoad();
+};

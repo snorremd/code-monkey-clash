@@ -8,12 +8,13 @@ import { basePluginSetup } from "../../plugins";
 const PlayerRow = ({ player }: { player: Player }) => {
 	return (
 		<li
+			attrs={{ score: player.score }}
 			class="flex flex-row justify-between bg-base-300 px-4 py-2 rounded-2xl bg-opacity-30 shadow-lg z-1"
 			id={`player-${player.nick}`}
-			sse-swap={`player-left-${player.nick}`}
-			hx-swap="delete"
+			// On htmx:sseMessage event, if event matches player-score-${player.nick} update attrs score with the new score
+			_={`on htmx:sseMessage(event) if event.detail.type === "player-score-${player.nick}" set @score to event.detail.data end`}
 		>
-			<h2 class={`text-xl ${player.color.class}`} safe>
+			<h2 safe class={`text-xl ${player.color.class}`}>
 				{player.nick}
 			</h2>
 			<span
@@ -23,10 +24,10 @@ const PlayerRow = ({ player }: { player: Player }) => {
 			>
 				{player.score}
 			</span>
-			<span // Use a hidden element to swap the chart data, don't actually swap json into the DOM
-				class="hidden"
-				sse-swap={`player-score-chart-${player.nick}`}
-				hx-swap="none"
+			<span // Use a hidden element to remove the player element from the score list
+				sse-swap={`player-left-${player.nick}`}
+				hx-swap="delete"
+				hx-target={`player-${player.nick}`}
 			/>
 		</li>
 	);
@@ -39,15 +40,18 @@ interface PlayerTableProps {
 const PlayerList = ({ players }: PlayerTableProps) => {
 	return (
 		<ul
-			id="scoreboard-list"
+			// Sort here is a selector
+			attrs={{ sort: "score", sortFn: "score" }}
 			class="auto-animate flex flex-col gap-2 z-10 bg-opacity-80 backdrop-blur-sm drop-shadow-lg max-h-[80vh] overflow-y-scroll scrollbar-w-none"
 			sse-swap="player-joined"
 			hx-swap="afterbegin"
 		>
-			{players.map((player) => (
-				// biome-ignore lint/correctness/useJsxKeyInIterable: <explanation>
-				<PlayerRow player={player} />
-			))}
+			{players
+				.toSorted((a, b) => b.score - a.score)
+				.map((player) => (
+					// biome-ignore lint/correctness/useJsxKeyInIterable: <explanation>
+					<PlayerRow player={player} />
+				))}
 		</ul>
 	);
 };
@@ -108,6 +112,11 @@ export const scoreboardPlugin = basePluginSetup()
 					<div class="chart-container min-h-screen min-w-screen max-h-screen max-w-screen absolute inset-0 pt-24">
 						<div class="epic-dark" />
 						<canvas id="score-board-chart" class="relative" />
+						<span // Use a hidden element to swap the chart data, don't actually swap json into the DOM
+							class="hidden"
+							sse-swap="player-score-chart"
+							hx-swap="none"
+						/>
 					</div>
 					<div class="min-h-screen min-w-screen max-h-screen max-w-screen absolute inset-0 pt-24 flex flex-col items-center text-center justify-center">
 						<GameStatus status={state.status} />
@@ -171,9 +180,10 @@ export const scoreboardPlugin = basePluginSetup()
 							data: `${event.log.score}`,
 						},
 						{
-							event: `player-score-chart-${event.nick}`,
+							event: "player-score-chart",
 							data: JSON.stringify({
-								x: new Date(event.log.date).toISOString(),
+								nick: event.nick,
+								x: event.log.date,
 								y: event.log.score,
 							}),
 						},
@@ -215,6 +225,7 @@ export const scoreboardPlugin = basePluginSetup()
 					return [
 						{
 							event: `player-left-${event.nick}`,
+							data: "",
 						},
 						{
 							event: "player-left-chart",

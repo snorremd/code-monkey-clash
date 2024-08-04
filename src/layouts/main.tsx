@@ -13,6 +13,7 @@ export const HTMLLayout = ({ page, header, children }: LayoutProps) => {
 				<script src="/public/htmx.min.js" />
 				<script src="/public/response-targets.js" />
 				<script src="/public/sse.js" />
+				<script src="/public/hyperscript.js" />
 				<script src="/public/client.js" />
 			</head>
 			<body class="bg-base-100" hx-ext="response-targets" hx-boost="true">

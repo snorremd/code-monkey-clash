@@ -10,14 +10,14 @@
     "build:tailwind": "tailwindcss -i ./src/tailwind.css -o ./public/tailwind.css",
     "build:server": "bun build --target=bun ./src/index.tsx --outfile=dist/index.js",
     "build:client": "bun build --target=bun ./src/client/client.ts --outdir ./public",
-    "build": "bun run --target=bun build:server && npm run build:tailwind",
+    "build": "bun run --target=bun build:server && bun run --target=bun build:tailwind && bun run --target=bun build:client",
     "format:check": "biome format ./src",
     "format": "biome format ./src --write",
     "lint": "biome lint ./src",
     "check": "biome check --write ./src",
     "typecheck": "tsc --noEmit",
     "benchmark": "bun run --target=bun tooling/benchmark.ts",
-    "simulate": "bun run --target=bun tooling/simulate.ts"
+    "simulate": "bun run build && bun run --target=bun tooling/simulate.ts"
   },
   "dependencies": {
     "@elysiajs/static": "^1.0.3",
@@ -29,7 +29,10 @@
     "chartjs-adapter-date-fns": "^3.0.0",
     "elysia": "^1.0.24",
     "html-escaper": "^3.0.3",
-    "htmx.org": "^1.9.12",
+    "htmx-ext-response-targets": "^2.0.0",
+    "htmx-ext-sse": "^2.2.1",
+    "htmx.org": "2.0.1",
+    "hyperscript.org": "^0.9.12",
     "lit": "^3.1.4"
   },
   "devDependencies": {
@@ -38,7 +41,7 @@
     "@total-typescript/shoehorn": "^0.1.2",
     "@types/bun": "^1.1.5",
     "@types/html-escaper": "^3.0.2",
-    "bun-types": "latest",
+    "bun-types": "1.1.21",
     "concurrently": "^8.2.2",
     "daisyui": "^4.12.8",
     "mitata": "^0.1.11",

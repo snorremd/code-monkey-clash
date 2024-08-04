@@ -24,10 +24,11 @@ const app = new Elysia({
 		Bun.file("node_modules/htmx.org/dist/htmx.min.js"),
 	)
 	.get("/public/response-targets.js", () =>
-		Bun.file("node_modules/htmx.org/dist/ext/response-targets.js"),
+		Bun.file("node_modules/htmx-ext-response-targets/response-targets.js"),
 	)
-	.get("/public/sse.js", () =>
-		Bun.file("node_modules/htmx.org/dist/ext/sse.js"),
+	.get("/public/sse.js", () => Bun.file("node_modules/htmx-ext-sse/sse.js"))
+	.get("/public/hyperscript.js", () =>
+		Bun.file("node_modules/hyperscript.org/dist/_hyperscript.min.js"),
 	)
 	.use(adminPlugin)
 	.use(homePlugin)
