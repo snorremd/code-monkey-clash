@@ -237,7 +237,7 @@ const Round = ({ state }: RoundProps) => {
 const PlayerRow = (player: Player) => {
 	const rowId = `player-${player.uuid}`;
 	return (
-		<tr class="odd:bg-base-300" id={rowId}>
+		<tr class="odd:bg-base-300" id={rowId} attrs={{ nick: player.nick }}>
 			<td>
 				<a
 					class="link link-hover"
@@ -310,12 +310,13 @@ const Admin = ({ state }: AdminProps) => {
 							</tr>
 						</thead>
 						<tbody
+							attrs={{ sort: "nick" }} // Enable auto-sorting
 							class="auto-animate"
 							sse-swap="player-joined"
 							hx-swap="afterbegin"
 						>
 							{state.players
-								.toSorted((a, b) => a.score - b.score)
+								.toSorted((a, b) => a.nick.localeCompare(b.nick))
 								.map((player) => (
 									// biome-ignore lint/correctness/useJsxKeyInIterable: Don't need it here
 									<PlayerRow {...player} />
